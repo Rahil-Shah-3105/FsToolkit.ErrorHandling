@@ -2,7 +2,9 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module AsyncOptionCE =
     type AsyncOptionBuilder() =
@@ -47,13 +49,16 @@ module AsyncOptionCE =
             : Async<'value option> =
             let compensation =
                 async {
+                LogRiteLogging._logger.LogDebug(">>> Entering compensation()")
                     let vTask = compensation ()
+                    LogRiteLogging._logger.LogDebug("compensation(): vTask → {VTask}", vTask)
 
                     if vTask.IsCompletedSuccessfully then
                         return ()
                     else
                         return!
                             vTask.AsTask()
+                            LogRiteLogging._logger.LogDebug("<<< Exiting compensation()")
                             |> Async.AwaitTask
                 }
 

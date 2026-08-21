@@ -7,21 +7,29 @@ open BenchmarkDotNet.Configs
 open System.Threading
 open System
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 module sequenceResultMTests =
 
     // original used in v4.16.0
     module SeqCache =
 
         let sequenceResultM (xs: seq<Result<'t, 'e>>) : Result<'t seq, 'e> =
+            LogRiteLogging._logger.LogDebug(">>> Entering sequenceResultM(xs={Xs})", xs)
             let rec loop xs ts =
                 match Seq.tryHead xs with
                 | Some x ->
                     x
-                    |> Result.bind (fun t -> loop (Seq.tail xs) (t :: ts))
+                    |> Result.bind (fun t ->
+                      LogRiteLogging._logger.LogDebug(">>> Entering loop(xs={Xs},ts={Ts})", xs, ts)
+                      loop (Seq.tail xs) (t :: ts))
                 | None ->
+                    LogRiteLogging._logger.LogDebug("<<< Exiting loop(xs={Xs},ts={Ts})", xs, ts)
                     Ok(
                         List.rev ts
+                    LogRiteLogging._logger.LogDebug(">>> Entering loop(oks={Oks})", oks)
+                    LogRiteLogging._logger.LogDebug("<<< Exiting loop(oks={Oks})", oks)
                         |> List.toSeq
                     )
 
@@ -31,8 +39,11 @@ module sequenceResultMTests =
     module SeqFold =
 
         let traverseResultM' state (f: 'okInput -> Result<'okOutput, 'error>) xs =
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseResultM(state={State},f={F})", state, f)
             let folder state x =
+                LogRiteLogging._logger.LogDebug(">>> Entering folder(state={State},x={X})", state, x)
                 match state, f x with
+                    LogRiteLogging._logger.LogDebug("<<< Exiting folder(state={State},x={X})", state, x)
                 | Error e, _ -> Error e
                 | Ok oks, Ok ok ->
                     Seq.singleton ok
@@ -189,7 +200,9 @@ type SeqBenchmarks() =
     // for testing early escape performance
     member _.GetPartialOkSeqWithSleep size =
         seq {
+        LogRiteLogging._logger.LogDebug(">>> Entering GetPartialOkSeqWithSleep(size={Size})", size)
             for i in 1u .. size do
+                LogRiteLogging._logger.LogDebug("<<< Exiting GetPartialOkSeqWithSleep(size={Size})", size)
                 Thread.Sleep(TimeSpan.FromMicroseconds(1.0))
                 if i = size / 2u then Error "error" else Ok i
         }
@@ -200,7 +213,9 @@ type SeqBenchmarks() =
 
     member _.GetPartialOkSeq size =
         seq {
+        LogRiteLogging._logger.LogDebug(">>> Entering GetPartialOkSeq(size={Size})", size)
             for i in 1u .. size do
+                LogRiteLogging._logger.LogDebug("<<< Exiting GetPartialOkSeq(size={Size})", size)
                 if i = size / 2u then Error "error" else Ok i
         }
 

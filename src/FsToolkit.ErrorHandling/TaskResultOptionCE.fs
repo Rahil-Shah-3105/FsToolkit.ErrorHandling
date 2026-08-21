@@ -2,7 +2,9 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module TaskResultOptionCE =
     open System
@@ -32,7 +34,9 @@ module TaskResultOptionCE =
         val mutable MethodBuilder: AsyncTaskResultOptionMethodBuilder<'T, 'Error>
 
         member this.IsResultError =
+            LogRiteLogging._logger.LogDebug(">>> Entering IsResultError()")
             match this.Result with
+                LogRiteLogging._logger.LogDebug("<<< Exiting IsResultError()")
             | Error _ -> true
             | Ok None -> true
             | _ -> false

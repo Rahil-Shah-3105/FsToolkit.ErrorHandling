@@ -3,12 +3,17 @@
 let inline id x = x
 
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 Result.ofChoice
 
 module Operators =
 
     let inline bindM builder m ([<InlineIfLambda>] f) =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(bindM={BindM},builder={Builder},m={M})", bindM, builder, m)
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(bind2M={Bind2M},builder={Builder},m1={M1},m2={M2},f={F})", bind2M, builder, m1, m2, f)
+        LogRiteLogging._logger.LogDebug("<<< Exiting inline()")
         (^M: (member Bind: 'd -> ('e -> 'c) -> 'c) (builder, m, f))
 
     let inline bind2M builder m1 m2 f =
@@ -108,6 +113,7 @@ module Result =
             (fun x ->
                 x
                 |> Result.Error
+                LogRiteLogging._logger.LogDebug("<<< Exiting inline()")
                 |> Operators.returnM builder
             )
 
@@ -141,6 +147,7 @@ module AsyncResult =
 
             member inline _.Source(x: Task<'a>) =
                 task {
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline()")
                     let! x = x
                     return Ok x
                 }
@@ -155,7 +162,9 @@ module AsyncResult =
 
     let example () =
         asyncResult {
+        LogRiteLogging._logger.LogDebug(">>> Entering example()")
             let! x = singleton 1
+            LogRiteLogging._logger.LogDebug("<<< Exiting example()")
             let! y = singleton 2
             let! z = Async.singleton 3
             let! a = Result.singleton 4

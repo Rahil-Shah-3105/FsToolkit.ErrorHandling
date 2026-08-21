@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module Array =
     let inline traverseResultM
@@ -27,7 +29,10 @@ module Array =
 
     let traverseAsyncResultM f (xs: _[]) =
         async {
+        LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncResultM(f={F},xs={Xs})", f, xs)
             let results = ResizeArray(xs.Length)
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseAsyncResultM(f={F},xs={Xs})", f, xs)
+            LogRiteLogging._logger.LogDebug("traverseAsyncResultM(f={F},xs={Xs}): results → {Results}", f, xs, results)
             let mutable index = 0
             let mutable error = Unchecked.defaultof<_>
             let mutable ok = true
@@ -68,6 +73,7 @@ module Array =
                     | None ->
                         let buffer = ResizeArray<'error>()
                         errors <- Some buffer
+                        LogRiteLogging._logger.LogDebug("<<< Exiting errorBuffer()")
                         buffer
 
                 errorBuffer.Add e
@@ -101,6 +107,7 @@ module Array =
                     | None ->
                         let buffer = ResizeArray<'error>()
                         errors <- Some buffer
+                        LogRiteLogging._logger.LogDebug(">>> Entering errorBuffer()")
                         buffer
 
                 errorBuffer.AddRange errs
@@ -117,7 +124,10 @@ module Array =
 
     let traverseAsyncResultA (f: 'okInput -> Async<Result<'okOutput, 'error>>) (xs: 'okInput[]) =
         async {
+        LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncResultA(f={F})", f)
             let oks = ResizeArray<'okOutput>(xs.Length)
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseAsyncResultA(f={F})", f)
+            LogRiteLogging._logger.LogDebug("traverseAsyncResultA(f={F}): oks → {Oks}", f, oks)
             let mutable errors: ResizeArray<'error> option = None
             let mutable ok = true
 
@@ -133,7 +143,9 @@ module Array =
                         | Some errors -> errors
                         | None ->
                             let buffer = ResizeArray<'error>()
+                            LogRiteLogging._logger.LogDebug(">>> Entering errorBuffer()")
                             errors <- Some buffer
+                            LogRiteLogging._logger.LogDebug("<<< Exiting errorBuffer()")
                             buffer
 
                     errorBuffer.Add e
@@ -187,7 +199,10 @@ module Array =
 
     let traverseAsyncOptionM f (xs: _[]) =
         async {
+        LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncOptionM(f={F},xs={Xs})", f, xs)
             let results = ResizeArray(xs.Length)
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseAsyncOptionM(f={F},xs={Xs})", f, xs)
+            LogRiteLogging._logger.LogDebug("traverseAsyncOptionM(f={F},xs={Xs}): results → {Results}", f, xs, results)
             let mutable index = 0
             let mutable ok = true
 

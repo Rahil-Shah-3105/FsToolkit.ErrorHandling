@@ -3,10 +3,13 @@ open BenchmarkDotNet.Configs
 open BenchmarkDotNet.Columns
 open BenchmarkDotNet.Reports
 open System.Reflection
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<EntryPoint>]
 let main argv =
+    LogRiteLogging._logger.LogDebug(">>> Entering main(argv={Argv})", argv)
 
     let cfg =
         DefaultConfig.Instance

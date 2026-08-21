@@ -2,14 +2,20 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open IcedTasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module ValueTaskValueOption =
 
     let inline map ([<InlineIfLambda>] f) (ar: ValueTask<_ voption>) =
         valueTask {
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(map={Map},ar={Ar})", map, ar)
             let! opt = ar
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(map={Map},ar={Ar})", map, ar)
+            LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind},ar={Ar})", bind, ar)
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(bind={Bind},ar={Ar})", bind, ar)
             return ValueOption.map f opt
         }
 
@@ -25,12 +31,18 @@ module ValueTaskValueOption =
     let inline valueSome x = ValueTask<_ voption>(ValueSome x)
 
     let inline apply f x =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(apply={Apply},f={F},x={X})", apply, f, x)
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(zip={Zip},x1={X1},x2={X2})", zip, x1, x2)
+        LogRiteLogging._logger.LogDebug("<<< Exiting inline(zip={Zip},x1={X1},x2={X2})", zip, x1, x2)
         bind (fun f' -> bind (fun x' -> valueSome (f' x')) x) f
 
     let inline zip (x1: ValueTask<'a voption>) (x2: ValueTask<'b voption>) =
         valueTask {
             let! r1 = x1
             let! r2 = x2
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(zip={Zip},x1={X1},x2={X2})", zip, x1, x2)
+            LogRiteLogging._logger.LogDebug(">>> Entering inline(defaultValue={DefaultValue},value={Value},valueTaskValueOption={ValueTaskValueOption})", defaultValue, value, valueTaskValueOption)
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(defaultValue={DefaultValue},value={Value},valueTaskValueOption={ValueTaskValueOption})", defaultValue, value, valueTaskValueOption)
             return ValueOption.zip r1 r2
         }
 

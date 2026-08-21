@@ -1,16 +1,24 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module ValueOption =
 
 
     let inline bind ([<InlineIfLambdaAttribute>] f) x =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind})", bind)
         match x with
-        | ValueSome v -> f v
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(bind={Bind})", bind)
+        | ValueSome v ->
+          LogRiteLogging._logger.LogDebug(">>> Entering inline(map={Map})", map)
+          LogRiteLogging._logger.LogDebug("<<< Exiting inline(map={Map})", map)
+          f v
         | ValueNone -> ValueNone
 
     let inline map ([<InlineIfLambdaAttribute>] f) x =
         match x with
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(map={Map})", map)
         | ValueSome v -> ValueSome(f v)
         | ValueNone -> ValueNone
 

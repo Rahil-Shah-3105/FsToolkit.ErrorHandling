@@ -1,7 +1,9 @@
 ﻿namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module AsyncValidationCE =
 
@@ -100,6 +102,7 @@ module AsyncValidationCE =
             /// <returns></returns>
             member inline _.Source(a: Async<'ok>) : AsyncValidation<'ok, 'error> =
                 async {
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline()")
                     let! result = a
                     return! AsyncValidation.ok result
                 }
