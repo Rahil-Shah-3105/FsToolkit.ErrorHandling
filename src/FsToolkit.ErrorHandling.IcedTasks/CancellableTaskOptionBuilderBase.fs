@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Diagnostics
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// Contains methods to build Tasks using the F# computation expression syntax
 [<AutoOpen>]
@@ -91,6 +93,7 @@ module CancellableTaskOptionBuilderBase =
         /// <returns>A CancellableTasks that returns ().</returns>
         [<DefaultValue>]
         member inline _.Zero() : CancellableTaskOptionBuilderBaseCode<'TOverall, unit> =
+            LogRiteLogging._logger.LogDebug(">>> Entering inline()")
             CancellableTaskOptionBuilderBaseCode<_, _>(fun sm ->
                 sm.Data.Result <- ValueSome(Some Unchecked.defaultof<'TOverall>)
                 true

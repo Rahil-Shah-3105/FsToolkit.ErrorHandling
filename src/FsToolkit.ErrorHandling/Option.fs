@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// <summary>
 /// Operators for working with the <c>Option</c> type.
 /// </summary>
@@ -85,7 +87,9 @@ module Option =
     /// <returns>A unit option.</returns>
     let inline ignore<'T> (opt: 'T option) : unit option =
         match opt with
-        | Some _ -> Some()
+        | Some _ ->
+          LogRiteLogging._logger.LogDebug("<<< Exiting inline(sequenceTask={SequenceTask},optTask={OptTask})", sequenceTask, optTask)
+          Some()
         | None -> None
 
     /// <summary>
@@ -331,11 +335,14 @@ module Option =
     /// </summary>
     let inline sequenceTask (optTask: Task<'T> option) : Task<'T option> =
         task {
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(sequenceTask={SequenceTask},optTask={OptTask})", sequenceTask, optTask)
             match optTask with
             | Some tsk ->
                 let! x = tsk
                 return Some x
-            | None -> return None
+            | None ->
+              LogRiteLogging._logger.LogDebug("<<< Exiting inline(sequenceAsync={SequenceAsync},optAsync={OptAsync})", sequenceAsync, optAsync)
+              return None
         }
 
     /// <summary>
@@ -393,6 +400,7 @@ module Option =
     /// </summary>
     let inline sequenceAsync (optAsync: Async<'T> option) : Async<'T option> =
         async {
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(sequenceAsync={SequenceAsync},optAsync={OptAsync})", sequenceAsync, optAsync)
             match optAsync with
             | Some asnc ->
                 let! x = asnc

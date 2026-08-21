@@ -1,24 +1,32 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module TaskResultOption =
     let inline map ([<InlineIfLambda>] f) tro = TaskResult.map (Option.map f) tro
 
     let inline bind ([<InlineIfLambda>] f) tro =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind})", bind)
         let binder opt =
+            LogRiteLogging._logger.LogDebug(">>> Entering binder(opt={Opt})", opt)
             match opt with
+                LogRiteLogging._logger.LogDebug("<<< Exiting binder(opt={Opt})", opt)
             | Some x -> f x
+            LogRiteLogging._logger.LogDebug(">>> Entering inline(map2={Map2})", map2)
             | None -> TaskResult.ok None
 
         TaskResult.bind binder tro
 
     let inline map2 ([<InlineIfLambda>] f) xTRO yTRO =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(map3={Map3})", map3)
         TaskResult.map2 (Option.map2 f) xTRO yTRO
 
     let inline map3 ([<InlineIfLambda>] f) xTRO yTRO zTRO =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(tro={Tro})", tro)
         TaskResult.map3 (Option.map3 f) xTRO yTRO zTRO
 
     let inline singleton value = TaskResult.ok (Some value)
@@ -32,6 +40,7 @@ module TaskResultOption =
     /// Replaces the wrapped value with unit
     let inline ignore<'ok, 'error> (tro: Task<Result<'ok option, 'error>>) =
         tro
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(ofResult={OfResult},result={Result})", ofResult, result)
         |> map ignore<'ok>
 
     /// <summary>

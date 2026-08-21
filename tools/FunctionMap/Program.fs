@@ -1,11 +1,14 @@
 open System
 open System.Reflection
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 type Comparison =
     | Exact of string
     | Contains of string
 
 let inline contains (value) (sequence: ^a) =
+    LogRiteLogging._logger.LogDebug(">>> Entering inline(contains={Contains},value={Value},sequence={Sequence})", contains, value, sequence)
     let bool = (^a: (member Contains: 'b -> bool) (sequence, value))
     bool
 

@@ -1,10 +1,14 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module List =
 
     let rec private traverseResultM' (state: Result<_, _>) (f: _ -> Result<_, _>) xs =
         match xs with
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseResultM(state={State},f={F})", state, f)
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseResultM(state={State},f={F})", state, f)
         | [] ->
             state
             |> Result.map List.rev
@@ -48,6 +52,7 @@ module List =
     let sequenceResultM xs = traverseResultM id xs
 
     let traverseAsyncResultM f xs =
+        LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncResultM(f={F},xs={Xs})", f, xs)
         traverseAsyncResultM' (AsyncResult.ok []) f xs
 
     let sequenceAsyncResultM xs = traverseAsyncResultM id xs
@@ -55,7 +60,9 @@ module List =
     let rec private traverseResultA' state f xs =
         match xs with
         | [] ->
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseResultA(state={State},f={F},xs={Xs})", state, f, xs)
             state
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseResultA(state={State},f={F},xs={Xs})", state, f, xs)
             |> Result.eitherMap List.rev List.rev
         | x :: xs ->
 
@@ -73,7 +80,9 @@ module List =
 
         | x :: xs ->
             async {
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncResultA(state={State},f={F},xs={Xs})", state, f, xs)
                 let! s = state
+                LogRiteLogging._logger.LogDebug("<<< Exiting traverseAsyncResultA(state={State},f={F},xs={Xs})", state, f, xs)
                 let! fR = f x
 
                 match s, fR with
@@ -91,7 +100,9 @@ module List =
     let rec private traverseValidationA' state f xs =
         match xs with
         | [] ->
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseValidationA(state={State},f={F},xs={Xs})", state, f, xs)
             state
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseValidationA(state={State},f={F},xs={Xs})", state, f, xs)
             |> Result.eitherMap List.rev List.rev
         | x :: xs ->
             let fR = f x
@@ -114,12 +125,15 @@ module List =
     let sequenceValidationA xs = traverseValidationA id xs
 
     let traverseAsyncResultA f xs =
+        LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncResultA(f={F},xs={Xs})", f, xs)
         traverseAsyncResultA' (AsyncResult.ok []) f xs
 
     let sequenceAsyncResultA xs = traverseAsyncResultA id xs
 
     let rec private traverseOptionM' (state: _ option) (f: _ -> _ option) xs =
         match xs with
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseOptionM(state={State},f={F})", state, f)
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseOptionM(state={State},f={F})", state, f)
         | [] ->
             state
             |> Option.map List.rev
@@ -128,6 +142,8 @@ module List =
                 option {
                     let! y = f x
                     let! ys = state
+                    LogRiteLogging._logger.LogDebug(">>> Entering r()")
+                    LogRiteLogging._logger.LogDebug("<<< Exiting r()")
                     return y :: ys
                 }
 
@@ -142,7 +158,9 @@ module List =
             |> AsyncOption.map List.rev
         | x :: xs ->
             async {
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncOptionM(state={State},f={F})", state, f)
                 let! o =
+                    LogRiteLogging._logger.LogDebug("<<< Exiting traverseAsyncOptionM(state={State},f={F})", state, f)
                     asyncOption {
                         let! y = f x
                         let! ys = state
@@ -174,6 +192,7 @@ module List =
     let sequenceOptionM xs = traverseOptionM id xs
 
     let traverseAsyncOptionM f xs =
+        LogRiteLogging._logger.LogDebug(">>> Entering traverseAsyncOptionM(f={F},xs={Xs})", f, xs)
         traverseAsyncOptionM' (AsyncOption.some []) f xs
 
     let sequenceAsyncOptionM xs = traverseAsyncOptionM id xs
@@ -181,6 +200,8 @@ module List =
 #if !FABLE_COMPILER
     let rec private traverseVOptionM' (state: voption<_>) (f: _ -> voption<_>) xs =
         match xs with
+            LogRiteLogging._logger.LogDebug("<<< Exiting traverseVOptionM(state={State},f={F})", state, f)
+            LogRiteLogging._logger.LogDebug(">>> Entering traverseVOptionM(state={State},f={F})", state, f)
         | [] ->
             state
             |> ValueOption.map List.rev
@@ -222,9 +243,11 @@ module List =
         let mutable remaining = xs
 
         task {
+        LogRiteLogging._logger.LogDebug("traverseTaskResultM(f={F},xs={Xs}): state → {State}", f, xs, state)
             while state
                   |> Result.isOk
                   && not (List.isEmpty remaining) do
+                      LogRiteLogging._logger.LogDebug("<<< Exiting traverseTaskResultM(f={F},xs={Xs})", f, xs)
                 match remaining with
                 | x :: xs ->
                     remaining <- xs
@@ -250,7 +273,9 @@ module List =
         let mutable state = Ok []
 
         task {
+        LogRiteLogging._logger.LogDebug("traverseTaskResultA(f={F},xs={Xs}): state → {State}", f, xs, state)
             for x in xs do
+                LogRiteLogging._logger.LogDebug("<<< Exiting traverseTaskResultA(f={F},xs={Xs})", f, xs)
                 let! r = f x
 
                 match (r, state) with

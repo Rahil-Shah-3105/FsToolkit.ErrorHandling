@@ -3,13 +3,16 @@ namespace FsToolkit.ErrorHandling
 open System.Threading.Tasks
 #if !FABLE_COMPILER
 open System.Runtime.ExceptionServices
+open Microsoft.Extensions.Logging
 #endif
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module AsyncResult =
 
     let inline ok (value: 'ok) : Async<Result<'ok, 'error>> =
         Ok value
+        LogRiteLogging._logger.LogDebug("<<< Exiting inline(getOrReraise={GetOrReraise},input={Input})", getOrReraise, input)
         |> Async.singleton
 
     let inline error (error: 'error) : Async<Result<'ok, 'error>> =
@@ -364,6 +367,7 @@ module AsyncResult =
     /// Gets the value in the Ok case or re-raises the exception in the Error case
     let inline getOrReraise (input: Async<Result<'ok, exn>>) : Async<'ok> =
         async {
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(getOrReraise={GetOrReraise},input={Input})", getOrReraise, input)
             match! input with
             | Ok a -> return a
             | Error exn ->

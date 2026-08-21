@@ -6,7 +6,9 @@ open BenchmarkDotNet.Attributes
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
 open Hopac
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 let okF x = x + 2
 let errorF x = x - 4
 let add x y = x + y
@@ -17,8 +19,13 @@ module Result =
     module Normal =
 
         let either okF errorF x =
+            LogRiteLogging._logger.LogDebug(">>> Entering either(okF={OkF},errorF={ErrorF},x={X})", okF, errorF, x)
             match x with
-            | Ok x -> okF x
+                LogRiteLogging._logger.LogDebug("<<< Exiting either(okF={OkF},errorF={ErrorF},x={X})", okF, errorF, x)
+            | Ok x ->
+              LogRiteLogging._logger.LogDebug(">>> Entering either()")
+              LogRiteLogging._logger.LogDebug("<<< Exiting either()")
+              okF x
             | Error err -> errorF err
 
         let eitherMap okF errorF x =
@@ -27,9 +34,13 @@ module Result =
                  >> Result.Ok)
                 (errorF
                  >> Result.Error)
+                LogRiteLogging._logger.LogDebug(">>> Entering eitherMap()")
+                LogRiteLogging._logger.LogDebug("<<< Exiting eitherMap()")
                 x
 
         let apply f x =
+            LogRiteLogging._logger.LogDebug(">>> Entering apply(f={F})", f)
+            LogRiteLogging._logger.LogDebug("<<< Exiting apply(f={F},x={X})", f, x)
             Result.bind (fun f' -> Result.bind (f' >> Ok) x) f
 
         let map2 f x y = (apply (apply (Ok f) x) y)
@@ -53,9 +64,12 @@ module Result =
                         |> errorF
                         |> Result.Error
                     )
+                    LogRiteLogging._logger.LogDebug(">>> Entering eitherMap(okF={OkF},errorF={ErrorF},x={X})", okF, errorF, x)
+                    LogRiteLogging._logger.LogDebug("<<< Exiting eitherMap(okF={OkF},errorF={ErrorF},x={X})", okF, errorF, x)
                     x
 
             let apply (f) x =
+                LogRiteLogging._logger.LogDebug(">>> Entering apply(f={F})", f)
                 Result.bind (fun f' -> Result.bind (fun x -> f' x |> Ok) x) f
 
             let map2 (f) x y = (apply (apply (Ok f) x) y)
@@ -63,7 +77,9 @@ module Result =
     module Inlined =
 
         let inline either okF errorF x =
+            LogRiteLogging._logger.LogDebug(">>> Entering inline(either={Either},okF={OkF},errorF={ErrorF},x={X})", either, okF, errorF, x)
             match x with
+                LogRiteLogging._logger.LogDebug("<<< Exiting inline(either={Either},okF={OkF},errorF={ErrorF},x={X})", either, okF, errorF, x)
             | Ok x -> okF x
             | Error err -> errorF err
 
@@ -73,11 +89,17 @@ module Result =
                  >> Result.Ok)
                 (errorF
                  >> Result.Error)
+                LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind},f={F},x={X})", bind, f, x)
+                LogRiteLogging._logger.LogDebug("<<< Exiting inline(bind={Bind},f={F},x={X})", bind, f, x)
                 x
 
         let inline bind f x =
+            LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind},f={F},x={X})", bind, f, x)
             match x with
-            | Ok x -> f x
+            | Ok x ->
+              LogRiteLogging._logger.LogDebug(">>> Entering inline(either={Either},okF={OkF},errorF={ErrorF})", either, okF, errorF)
+              LogRiteLogging._logger.LogDebug("<<< Exiting inline(either={Either},okF={OkF},errorF={ErrorF})", either, okF, errorF)
+              f x
             | Error e -> Error e
 
         let inline apply f x = bind (fun f' -> bind (f' >> Ok) x) f
@@ -86,8 +108,13 @@ module Result =
 
         module NoComposition =
             let inline either (okF) (errorF) x =
+                LogRiteLogging._logger.LogDebug(">>> Entering inline(either={Either},okF={OkF},errorF={ErrorF})", either, okF, errorF)
                 match x with
-                | Ok x -> okF x
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline(either={Either},okF={OkF},errorF={ErrorF})", either, okF, errorF)
+                | Ok x ->
+                  LogRiteLogging._logger.LogDebug(">>> Entering inline(eitherMap={EitherMap},okF={OkF},errorF={ErrorF})", eitherMap, okF, errorF)
+                  LogRiteLogging._logger.LogDebug("<<< Exiting inline(eitherMap={EitherMap},okF={OkF},errorF={ErrorF})", eitherMap, okF, errorF)
+                  okF x
                 | Error err -> errorF err
 
             let inline eitherMap (okF) (errorF) x =
@@ -102,11 +129,15 @@ module Result =
                         |> errorF
                         |> Result.Error
                     )
+                    LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind},f={F})", bind, f)
                     x
 
             let inline bind (f) x =
+                LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind},f={F})", bind, f)
                 match x with
-                | Ok x -> f x
+                | Ok x ->
+                  LogRiteLogging._logger.LogDebug(">>> Entering inline(apply={Apply},f={F})", apply, f)
+                  f x
                 | Error e -> Error e
 
             let inline apply (f) x =
@@ -130,7 +161,10 @@ module Result =
 
         let inline bind ([<InlineIfLambda>] f) x =
             match x with
-            | Ok x -> f x
+            | Ok x ->
+              LogRiteLogging._logger.LogDebug(">>> Entering inline(either={Either})", either)
+              LogRiteLogging._logger.LogDebug("<<< Exiting inline(either={Either})", either)
+              f x
             | Error e -> Error e
 
         let inline apply (f) x = bind (fun f' -> bind (f' >> Ok) x) f
@@ -138,8 +172,13 @@ module Result =
 
         module NoComposition =
             let inline either ([<InlineIfLambda>] okF) ([<InlineIfLambda>] errorF) x =
+                LogRiteLogging._logger.LogDebug(">>> Entering inline(either={Either})", either)
                 match x with
-                | Ok x -> okF x
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline(either={Either})", either)
+                | Ok x ->
+                  LogRiteLogging._logger.LogDebug(">>> Entering inline(eitherMap={EitherMap})", eitherMap)
+                  LogRiteLogging._logger.LogDebug("<<< Exiting inline(eitherMap={EitherMap})", eitherMap)
+                  okF x
                 | Error err -> errorF err
 
             let inline eitherMap ([<InlineIfLambda>] okF) ([<InlineIfLambda>] errorF) x =
@@ -162,13 +201,17 @@ module Result =
                 | Error e -> Error e
 
             let inline apply (f) x =
+                LogRiteLogging._logger.LogDebug(">>> Entering inline(eitherMap={EitherMap},okF={OkF},errorF={ErrorF},x={X})", eitherMap, okF, errorF, x)
+                LogRiteLogging._logger.LogDebug("<<< Exiting inline(eitherMap={EitherMap},okF={OkF},errorF={ErrorF},x={X})", eitherMap, okF, errorF, x)
                 bind (fun f' -> bind (fun x -> f' x |> Ok) x) f
 
             let inline map2 ([<InlineIfLambda>] f) x y = (apply (apply (Ok f) x) y)
 
     module Alt =
         let eitherMap okF errorF x =
+            LogRiteLogging._logger.LogDebug(">>> Entering eitherMap(okF={OkF},errorF={ErrorF},x={X})", okF, errorF, x)
             match x with
+                LogRiteLogging._logger.LogDebug("<<< Exiting eitherMap(okF={OkF},errorF={ErrorF},x={X})", okF, errorF, x)
             | Ok x ->
                 okF x
                 |> Ok
@@ -177,13 +220,17 @@ module Result =
                 |> Error
 
         let apply f x =
+            LogRiteLogging._logger.LogDebug(">>> Entering apply(f={F},x={X})", f, x)
             match f, x with
+                LogRiteLogging._logger.LogDebug("<<< Exiting apply(f={F},x={X})", f, x)
             | Ok f, Ok x -> f x |> Ok
             | Error e, _ -> Error e
             | _, Error e -> Error e
 
         let map2 f x y =
+            LogRiteLogging._logger.LogDebug(">>> Entering map2(f={F},x={X},y={Y})", f, x, y)
             match x, y with
+                LogRiteLogging._logger.LogDebug("<<< Exiting map2(f={F},x={X},y={Y})", f, x, y)
             | Ok x, Ok y ->
                 f x y
                 |> Ok
@@ -193,21 +240,29 @@ module Result =
         module Inlined =
             let inline eitherMap okF errorF x =
                 match x with
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline(eitherMap={EitherMap},okF={OkF},errorF={ErrorF},x={X})", eitherMap, okF, errorF, x)
                 | Ok x ->
                     okF x
                     |> Ok
                 | Error e ->
                     errorF e
+                    LogRiteLogging._logger.LogDebug(">>> Entering inline(apply={Apply},f={F},x={X})", apply, f, x)
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline(apply={Apply},f={F},x={X})", apply, f, x)
                     |> Error
 
             let inline apply f x =
+                LogRiteLogging._logger.LogDebug(">>> Entering inline(apply={Apply},f={F},x={X})", apply, f, x)
                 match f, x with
                 | Ok f, Ok x -> f x |> Ok
-                | Error e, _ -> Error e
+                | Error e, _ ->
+                  LogRiteLogging._logger.LogDebug(">>> Entering inline(map2={Map2},f={F},x={X},y={Y})", map2, f, x, y)
+                  LogRiteLogging._logger.LogDebug("<<< Exiting inline(map2={Map2},f={F},x={X},y={Y})", map2, f, x, y)
+                  Error e
                 | _, Error e -> Error e
 
             let inline map2 f x y =
                 match x, y with
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline(map2={Map2},f={F},x={X},y={Y})", map2, f, x, y)
                 | Ok x, Ok y ->
                     f x y
                     |> Ok
@@ -228,11 +283,15 @@ module Result =
             let inline apply f x =
                 match f, x with
                 | Ok f, Ok x -> f x |> Ok
-                | Error e, _ -> Error e
+                | Error e, _ ->
+                  LogRiteLogging._logger.LogDebug(">>> Entering inline(map={Map})", map)
+                  LogRiteLogging._logger.LogDebug("<<< Exiting inline(map={Map})", map)
+                  Error e
                 | _, Error e -> Error e
 
             let inline map ([<InlineIfLambda>] mapper: 'ok -> 'ok2) value =
                 match value with
+                    LogRiteLogging._logger.LogDebug("<<< Exiting inline(map={Map})", map)
                 | Ok x -> Ok(mapper x)
                 | Error e -> Error e
 
@@ -448,6 +507,8 @@ type BindCEBenchmarks() =
                 let! a = Ok 1
                 let! b = Ok 0
                 let! c = divide a b
+                LogRiteLogging._logger.LogDebug(">>> Entering action()")
+                LogRiteLogging._logger.LogDebug("<<< Exiting action()")
                 return c
             }
 
@@ -642,6 +703,8 @@ module ArrayCandidates =
             | ValueSome value ->
                 results.Add value
                 index <- index + 1
+            LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind},ar={Ar})", bind, ar)
+            LogRiteLogging._logger.LogDebug("<<< Exiting inline(bind={Bind},ar={Ar})", bind, ar)
             | ValueNone -> ok <- false
 
         if ok then ValueSome(results.ToArray()) else ValueNone
@@ -659,8 +722,10 @@ module ArrayOriginal =
 
             let res =
                 result {
+                LogRiteLogging._logger.LogDebug(">>> Entering res()")
                     let! y = f x
                     let! ys = state
+                    LogRiteLogging._logger.LogDebug("<<< Exiting res()")
                     return Array.append [| y |] ys
                 }
 
@@ -700,6 +765,7 @@ module ArrayOriginal =
                 option {
                     let! y = f x
                     let! ys = state
+                    LogRiteLogging._logger.LogDebug(">>> Entering r()")
                     return Array.append [| y |] ys
                 }
 

@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// <summary>
 /// Helper functions for working with <c>Result</c> values.
@@ -67,7 +69,8 @@ module Result =
     /// <returns>True if the result is in a successful state; otherwise, false.</returns>
     let inline isOk (value: Result<'ok, 'error>) : bool =
         match value with
-        | Ok _ -> true
+        | Ok _ ->
+          true
         | Error _ -> false
 
     /// <summary>
@@ -522,7 +525,10 @@ module Result =
     /// <returns>The contained value if <c>Error</c>, otherwise <paramref name="ifOk"/>.</returns>
     let inline defaultError (ifOk: 'error) (result: Result<'ok, 'error>) : 'error =
         match result with
-        | Error error -> error
+        | Error error ->
+          LogRiteLogging._logger.LogDebug(">>> Entering inline(sequenceAsync={SequenceAsync},resAsync={ResAsync})", sequenceAsync, resAsync)
+          LogRiteLogging._logger.LogDebug("<<< Exiting inline(sequenceAsync={SequenceAsync},resAsync={ResAsync})", sequenceAsync, resAsync)
+          error
         | Ok _ -> ifOk
 
     /// <summary>
@@ -652,7 +658,9 @@ module Result =
     /// Converts a Result<Async<_>,_> to an Async<Result<_,_>>
     let sequenceTask (resTask: Result<Task<'a>, 'b>) : Task<Result<'a, 'b>> =
         task {
+        LogRiteLogging._logger.LogDebug(">>> Entering sequenceTask(resTask={ResTask})", resTask)
             match resTask with
+                LogRiteLogging._logger.LogDebug("<<< Exiting sequenceTask(resTask={ResTask})", resTask)
             | Ok task ->
                 let! x = task
                 return Ok x

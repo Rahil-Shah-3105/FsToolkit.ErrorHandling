@@ -1,4 +1,6 @@
+open Microsoft.Extensions.Logging
 ﻿namespace FsToolkit.ErrorHandling
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// Contains methods to build CancellableTasks using the F# computation expression syntax
 [<AutoOpen>]
@@ -37,6 +39,7 @@ module CancellableTaskOptionCE =
             let mutable sm = CancellableTaskOptionBuilderBaseStateMachine<'T>()
 
             let initialResumptionFunc =
+                LogRiteLogging._logger.LogDebug(">>> Entering initialResumptionFunc()")
                 CancellableTaskOptionBuilderBaseResumptionFunc<'T>(fun sm -> code.Invoke(&sm))
 
             let resumptionInfo =
@@ -288,6 +291,7 @@ module CancellableTaskOption =
     /// followed by "Tasks Finished".
     /// </example>
     let inline getCancellationToken () =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(getCancellationToken=<redacted>)")
         fun (ct: CancellationToken) -> ValueTask<CancellationToken> ct
 
     /// <summary>Lifts an item to a CancellableTask.</summary>

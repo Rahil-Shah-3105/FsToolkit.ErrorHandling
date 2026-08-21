@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module TaskResult =
 
@@ -10,10 +12,12 @@ module TaskResult =
     let inline mapError ([<InlineIfLambda>] f) tr = Task.map (Result.mapError f) tr
 
     let inline bind ([<InlineIfLambda>] f) (tr: Task<_>) =
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(bind={Bind},tr={Tr})", bind, tr)
         tr
         |> Task.bind (
             Result.either
                 f
+                LogRiteLogging._logger.LogDebug(">>> Entering inline(ofAsync={OfAsync},aAsync={AAsync})", ofAsync, aAsync)
                 (Error
                  >> Task.singleton)
         )
@@ -22,14 +26,17 @@ module TaskResult =
         aAsync
         |> Async.Catch
         |> Async.StartImmediateAsTask
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(ok={Ok},x={X})", ok, x)
         |> Task.map Result.ofChoice
 
     let inline ok x =
         Ok x
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(error={Error},x={X})", error, x)
         |> Task.singleton
 
     let inline error x =
         Error x
+        LogRiteLogging._logger.LogDebug(">>> Entering inline(orElse={OrElse},ifError={IfError},result={Result})", orElse, ifError, result)
         |> Task.singleton
 
     let inline map2 ([<InlineIfLambda>] f) xTR yTR = Task.map2 (Result.map2 f) xTR yTR

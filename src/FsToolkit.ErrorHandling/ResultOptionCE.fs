@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module ResultOptionCE =
 
@@ -29,6 +31,7 @@ module ResultOptionCE =
             ResultOption.bind binder resultOpt
 
         member inline _.Delay([<InlineIfLambda>] delayer: unit -> Result<'ok option, 'error>) =
+            LogRiteLogging._logger.LogDebug(">>> Entering inline(delayer={Delayer},unit={Unit})", delayer, unit)
             delayer
 
         member inline _.Run

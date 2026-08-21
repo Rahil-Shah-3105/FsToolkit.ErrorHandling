@@ -15,7 +15,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open IcedTasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// CancellationToken -> ValueTask<'T voption>
 type CancellableValueTaskValueOption<'T> = CancellationToken -> ValueTask<'T voption>
 
@@ -33,11 +35,15 @@ type TaskOptionStateMachineData<'T> =
     member this.IsResultNone =
         match this.Result with
         | ValueNone -> false
-        | ValueSome(ValueNone) -> true
+        | ValueSome(ValueNone) ->
+          LogRiteLogging._logger.LogDebug(">>> Entering IsResultNone()")
+          true
         | ValueSome _ -> false
 
     member this.SetResult() =
+        LogRiteLogging._logger.LogDebug(">>> Entering SetResult()")
         match this.Result with
+            LogRiteLogging._logger.LogDebug("<<< Exiting SetResult()")
         | ValueNone -> this.MethodBuilder.SetResult ValueNone
         | ValueSome x -> this.MethodBuilder.SetResult x
 
