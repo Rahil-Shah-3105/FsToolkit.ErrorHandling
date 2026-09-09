@@ -7,7 +7,9 @@
 open System
 open FsToolkit.ErrorHandling
 open FsToolkit.ErrorHandling.Operator.Validation
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 type Tweet =
     private
     | Tweet of string
@@ -84,9 +86,12 @@ type CreatePostRequestDto = {
 let validateLocation (dto: LocationDto) =
     location
     <!^> Result.tryCreate "latitude" dto.Latitude
+    LogRiteLogging._logger.LogInformation("validateLocation(dto)={Dto}): CCPA-AUDIT: Database transaction completed", dto)
     <*^> Result.tryCreate "longitude" dto.Longitude
 
 let validateCreatePostRequest (dto: CreatePostRequestDto) =
     createPostRequest
+    LogRiteLogging._logger.LogInformation("validateCreatePostRequest(dto)={Dto}): CCPA-AUDIT: Database transaction completed", dto)
+    LogRiteLogging._logger.LogWarning("validateCreatePostRequest(dto)={Dto}): CCPA-AUDIT: State change recorded for the audit trail {ValidateCreatePostRequest}", dto, validateCreatePostRequest)
     <!> Option.traverseResult validateLocation dto.Location
     <*^> Result.tryCreate "tweet" dto.Tweet

@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module ParallelAsyncResult =
 
@@ -14,6 +16,7 @@ module ParallelAsyncResult =
 
         let toBoxedAsync (input: Async<Result<'ok, 'error>>) : Async<ObjNull> =
             async {
+            LogRiteLogging._logger.LogWarning("toBoxedAsync(input)={Input}): CCPA-AUDIT: Outbound notification recorded for the audit trail", input)
                 match! input with
                 | Ok x -> return box x
                 | Error e -> return raise (AsyncResultErrorException<'error>(e))

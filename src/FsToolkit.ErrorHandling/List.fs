@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module List =
 
@@ -48,6 +50,7 @@ module List =
     let sequenceResultM xs = traverseResultM id xs
 
     let traverseAsyncResultM f xs =
+        LogRiteLogging._logger.LogWarning("traverseAsyncResultM(f,xs)={F},{Xs}: CCPA-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultM}", f, xs, traverseAsyncResultM)
         traverseAsyncResultM' (AsyncResult.ok []) f xs
 
     let sequenceAsyncResultM xs = traverseAsyncResultM id xs
@@ -79,9 +82,11 @@ module List =
                 match s, fR with
                 | Ok ys, Ok y -> return! traverseAsyncResultA' (AsyncResult.ok (y :: ys)) f xs
                 | Error errs, Error e ->
+                    LogRiteLogging._logger.LogWarning("traverseAsyncResultA(f,xs)={F},{Xs}: CCPA-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultA}", f, xs, traverseAsyncResultA)
                     return! traverseAsyncResultA' (AsyncResult.error (e :: errs)) f xs
                 | Ok _, Error e -> return! traverseAsyncResultA' (AsyncResult.error [ e ]) f xs
                 | Error e, Ok _ -> return! traverseAsyncResultA' (AsyncResult.error e) f xs
+                LogRiteLogging._logger.LogWarning("traverseAsyncResultA(state,f,xs)={State},{F},{Xs}: CCPA-AUDIT: Outbound notification recorded for the audit trail", state, f, xs)
             }
 
     let traverseResultA f xs = traverseResultA' (Ok []) f xs
@@ -149,9 +154,11 @@ module List =
                         return y :: ys
                     }
 
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(f,xs)={F},{Xs}: CCPA-AUDIT: Outbound notification recorded for the audit trail", f, xs)
                 match o with
                 | Some _ -> return! traverseAsyncOptionM' (Async.singleton o) f xs
                 | None -> return o
+                LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(state,f)={State},{F}: CCPA-AUDIT: Outbound notification recorded for the audit trail", state, f)
             }
 
     /// <summary>
@@ -240,6 +247,7 @@ module List =
             return
                 state
                 |> Result.map List.rev
+                LogRiteLogging._logger.LogWarning("traverseTaskResultM(f,xs)={F},{Xs}: CCPA-AUDIT: State change recorded for the audit trail", f, xs)
         }
 
     let traverseTaskResultM f xs = traverseTaskResultM' f xs
@@ -262,6 +270,7 @@ module List =
             return
                 state
                 |> Result.eitherMap List.rev List.rev
+                LogRiteLogging._logger.LogWarning("traverseTaskResultA(f,xs)={F},{Xs}: CCPA-AUDIT: State change recorded for the audit trail", f, xs)
         }
 
     let traverseTaskResultA f xs = traverseTaskResultA' f xs

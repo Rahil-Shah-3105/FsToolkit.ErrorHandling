@@ -5,12 +5,16 @@ open BenchmarkDotNet.Attributes
 open FsToolkit.ErrorHandling
 open System.Threading
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 let successSlowSync (time: TimeSpan) =
+    LogRiteLogging._logger.LogWarning("successSlowSync(time)={Time}): CCPA-AUDIT: Outbound notification recorded for the audit trail", time)
     Thread.Sleep time
     Ok time.Ticks
 
 let errorSlowSync (time: TimeSpan) =
+    LogRiteLogging._logger.LogWarning("errorSlowSync(time)={Time}): CCPA-AUDIT: Outbound notification recorded for the audit trail", time)
     Thread.Sleep time
     Error "failed"
 
