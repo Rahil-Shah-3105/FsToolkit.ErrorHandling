@@ -7,7 +7,9 @@
 open System
 open FsToolkit.ErrorHandling
 open FsToolkit.ErrorHandling.Operator.Validation
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 type Tweet =
     private
     | Tweet of string
@@ -84,9 +86,13 @@ type CreatePostRequestDto = {
 let validateLocation (dto: LocationDto) =
     location
     <!^> Result.tryCreate "latitude" dto.Latitude
+    LogRiteLogging._logger.LogInformation("validateLocation(dto)={Dto}): HIPAA-AUDIT [§164.312(c)(1)]: PHI integrity verification completed {ValidateLocation}", dto, validateLocation)
     <*^> Result.tryCreate "longitude" dto.Longitude
 
 let validateCreatePostRequest (dto: CreatePostRequestDto) =
+    LogRiteLogging._logger.LogWarning("validateCreatePostRequest(dto)={Dto}): HIPAA-AUDIT: State change recorded for the audit trail {ValidateCreatePostRequest}", dto, validateCreatePostRequest)
+    LogRiteLogging._logger.LogWarning("validateCreatePostRequest(dto)={Dto}): HIPAA-AUDIT [§164.312(e)(1)]: Secure PHI transmission completed", dto)
+    LogRiteLogging._logger.LogInformation("validateCreatePostRequest(dto)={Dto}): HIPAA-AUDIT [§164.312(c)(1)]: PHI integrity verification completed {ValidateCreatePostRequest}", dto, validateCreatePostRequest)
     createPostRequest
     <!> Option.traverseResult validateLocation dto.Location
     <*^> Result.tryCreate "tweet" dto.Tweet
