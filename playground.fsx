@@ -3,12 +3,15 @@
 let inline id x = x
 
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 Result.ofChoice
 
 module Operators =
 
     let inline bindM builder m ([<InlineIfLambda>] f) =
+        LogRiteLogging._logger.LogWarning("ENTERING: inline() method")
         (^M: (member Bind: 'd -> ('e -> 'c) -> 'c) (builder, m, f))
 
     let inline bind2M builder m1 m2 f =
@@ -155,6 +158,7 @@ module AsyncResult =
 
     let example () =
         asyncResult {
+        LogRiteLogging._logger.LogInformation("ENTERING: example() method")
             let! x = singleton 1
             let! y = singleton 2
             let! z = Async.singleton 3

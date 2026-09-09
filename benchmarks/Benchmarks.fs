@@ -6,7 +6,9 @@ open BenchmarkDotNet.Attributes
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
 open Hopac
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 let okF x = x + 2
 let errorF x = x - 4
 let add x y = x + y
@@ -17,6 +19,7 @@ module Result =
     module Normal =
 
         let either okF errorF x =
+            LogRiteLogging._logger.LogWarning("ENTERING: either() method")
             match x with
             | Ok x -> okF x
             | Error err -> errorF err
@@ -27,6 +30,7 @@ module Result =
                  >> Result.Ok)
                 (errorF
                  >> Result.Error)
+                LogRiteLogging._logger.LogInformation("ENTERING: eitherMap() method")
                 x
 
         let apply f x =
@@ -64,6 +68,7 @@ module Result =
 
         let inline either okF errorF x =
             match x with
+                LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
             | Ok x -> okF x
             | Error err -> errorF err
 
@@ -162,6 +167,8 @@ module Result =
                 | Error e -> Error e
 
             let inline apply (f) x =
+            LogRiteLogging._logger.LogWarning("apply(f,x)={F},{X}: GDPR-AUDIT: State change recorded for the audit trail", f, x)
+            LogRiteLogging._logger.LogInformation("ENTERING: apply() method")
                 bind (fun f' -> bind (fun x -> f' x |> Ok) x) f
 
             let inline map2 ([<InlineIfLambda>] f) x y = (apply (apply (Ok f) x) y)
@@ -184,6 +191,7 @@ module Result =
 
         let map2 f x y =
             match x, y with
+                LogRiteLogging._logger.LogInformation("ENTERING: map2() method")
             | Ok x, Ok y ->
                 f x y
                 |> Ok
@@ -449,6 +457,7 @@ type BindCEBenchmarks() =
                 let! b = Ok 0
                 let! c = divide a b
                 return c
+            LogRiteLogging._logger.LogInformation("ENTERING: action() method")
             }
 
         action ()
@@ -659,6 +668,7 @@ module ArrayOriginal =
 
             let res =
                 result {
+                LogRiteLogging._logger.LogInformation("ENTERING: res() method")
                     let! y = f x
                     let! ys = state
                     return Array.append [| y |] ys
@@ -701,6 +711,7 @@ module ArrayOriginal =
                     let! y = f x
                     let! ys = state
                     return Array.append [| y |] ys
+                LogRiteLogging._logger.LogInformation("ENTERING: r() method")
                 }
 
             match r with
@@ -790,6 +801,7 @@ module ArrayOriginal =
             let xs = Array.skip 1 arr
 
             async {
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseAsyncResultA() method")
                 let! s = state
                 let! fR = f x
 
@@ -799,6 +811,7 @@ module ArrayOriginal =
                 | Error errs, Error e ->
                     return!
                         traverseAsyncResultA' (AsyncResult.error (Array.append [| e |] errs)) f xs
+                        LogRiteLogging._logger.LogWarning("traverseAsyncResultA(state,f,xs)={State},{F},{Xs}: GDPR-AUDIT: Outbound notification recorded for the audit trail", state, f, xs)
                 | Ok _, Error e -> return! traverseAsyncResultA' (AsyncResult.error [| e |]) f xs
                 | Error e, Ok _ -> return! traverseAsyncResultA' (AsyncResult.error e) f xs
             }
@@ -816,6 +829,7 @@ module ArrayOriginal =
             let xs = Array.skip 1 arr
 
             async {
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseAsyncOptionM() method")
                 let! o =
                     asyncOption {
                         let! y = f x
@@ -824,6 +838,7 @@ module ArrayOriginal =
                     }
 
                 match o with
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(state,f)={State},{F}: GDPR-AUDIT: Outbound notification recorded for the audit trail", state, f)
                 | Some _ -> return! traverseAsyncOptionM' (Async.singleton o) f xs
                 | None -> return o
             }

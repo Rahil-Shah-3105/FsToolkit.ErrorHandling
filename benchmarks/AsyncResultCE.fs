@@ -4,7 +4,9 @@ open System
 open BenchmarkDotNet
 open BenchmarkDotNet.Attributes
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 module AsyncResultCE =
 
 
@@ -79,6 +81,7 @@ module AsyncResultCEExtensions =
 
     let rec afib (n, level) =
         async {
+        LogRiteLogging._logger.LogInformation("ENTERING: afib() method")
             if n < 0L then
                 return Error "No"
             elif n < 2L then
@@ -127,6 +130,7 @@ module AsyncResultCEExtensions =
         member this.Result_Alt_Inlined_Bind_CE() =
             let action () =
                 asyncResultInlinedIfLambda {
+                LogRiteLogging._logger.LogInformation("ENTERING: action() method")
                     let! a = Ok 10
                     let! b = Ok 5
                     let! c = afib (a, b)

@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// <summary>
 /// Operators for working with the <c>Option</c> type.
 /// </summary>
@@ -296,6 +298,7 @@ module Option =
         | Some _ -> ()
         | None -> f ()
 
+        LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
         opt
 
     /// <summary>

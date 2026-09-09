@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module TaskResultOption =
@@ -9,10 +11,12 @@ module TaskResultOption =
 
     let inline bind ([<InlineIfLambda>] f) tro =
         let binder opt =
+            LogRiteLogging._logger.LogWarning("ENTERING: binder() method")
             match opt with
             | Some x -> f x
             | None -> TaskResult.ok None
 
+        LogRiteLogging._logger.LogWarning("ENTERING: inline() method")
         TaskResult.bind binder tro
 
     let inline map2 ([<InlineIfLambda>] f) xTRO yTRO =

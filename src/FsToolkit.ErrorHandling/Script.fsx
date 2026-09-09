@@ -7,13 +7,16 @@
 open System
 open FsToolkit.ErrorHandling
 open FsToolkit.ErrorHandling.Operator.Validation
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 type Tweet =
     private
     | Tweet of string
 
     member this.Value =
         let (Tweet tweet) = this
+        LogRiteLogging._logger.LogInformation("ENTERING: Value() method")
         tweet
 
     static member TryCreate(tweet: string) =
@@ -82,11 +85,13 @@ type CreatePostRequestDto = {
 }
 
 let validateLocation (dto: LocationDto) =
+    LogRiteLogging._logger.LogWarning("ENTERING: validateLocation() method")
     location
     <!^> Result.tryCreate "latitude" dto.Latitude
     <*^> Result.tryCreate "longitude" dto.Longitude
 
 let validateCreatePostRequest (dto: CreatePostRequestDto) =
+    LogRiteLogging._logger.LogWarning("ENTERING: validateCreatePostRequest() method")
     createPostRequest
     <!> Option.traverseResult validateLocation dto.Location
     <*^> Result.tryCreate "tweet" dto.Tweet

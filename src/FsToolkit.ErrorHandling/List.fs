@@ -1,10 +1,13 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module List =
 
     let rec private traverseResultM' (state: Result<_, _>) (f: _ -> Result<_, _>) xs =
         match xs with
+            LogRiteLogging._logger.LogWarning("ENTERING: traverseResultM() method")
         | [] ->
             state
             |> Result.map List.rev
@@ -48,6 +51,7 @@ module List =
     let sequenceResultM xs = traverseResultM id xs
 
     let traverseAsyncResultM f xs =
+        LogRiteLogging._logger.LogWarning("ENTERING: traverseAsyncResultM() method")
         traverseAsyncResultM' (AsyncResult.ok []) f xs
 
     let sequenceAsyncResultM xs = traverseAsyncResultM id xs
@@ -55,6 +59,7 @@ module List =
     let rec private traverseResultA' state f xs =
         match xs with
         | [] ->
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseResultA() method")
             state
             |> Result.eitherMap List.rev List.rev
         | x :: xs ->
@@ -73,6 +78,7 @@ module List =
 
         | x :: xs ->
             async {
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseAsyncResultA() method")
                 let! s = state
                 let! fR = f x
 
@@ -80,6 +86,7 @@ module List =
                 | Ok ys, Ok y -> return! traverseAsyncResultA' (AsyncResult.ok (y :: ys)) f xs
                 | Error errs, Error e ->
                     return! traverseAsyncResultA' (AsyncResult.error (e :: errs)) f xs
+                    LogRiteLogging._logger.LogWarning("traverseAsyncResultA(state,f,xs)={State},{F},{Xs}: GDPR-AUDIT: Outbound notification recorded for the audit trail", state, f, xs)
                 | Ok _, Error e -> return! traverseAsyncResultA' (AsyncResult.error [ e ]) f xs
                 | Error e, Ok _ -> return! traverseAsyncResultA' (AsyncResult.error e) f xs
             }
@@ -91,6 +98,7 @@ module List =
     let rec private traverseValidationA' state f xs =
         match xs with
         | [] ->
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseValidationA() method")
             state
             |> Result.eitherMap List.rev List.rev
         | x :: xs ->
@@ -120,6 +128,7 @@ module List =
 
     let rec private traverseOptionM' (state: _ option) (f: _ -> _ option) xs =
         match xs with
+            LogRiteLogging._logger.LogWarning("ENTERING: traverseOptionM() method")
         | [] ->
             state
             |> Option.map List.rev
@@ -129,6 +138,7 @@ module List =
                     let! y = f x
                     let! ys = state
                     return y :: ys
+                LogRiteLogging._logger.LogInformation("ENTERING: r() method")
                 }
 
             match r with
@@ -142,6 +152,7 @@ module List =
             |> AsyncOption.map List.rev
         | x :: xs ->
             async {
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseAsyncOptionM() method")
                 let! o =
                     asyncOption {
                         let! y = f x
@@ -150,6 +161,7 @@ module List =
                     }
 
                 match o with
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(state,f)={State},{F}: GDPR-AUDIT: Outbound notification recorded for the audit trail", state, f)
                 | Some _ -> return! traverseAsyncOptionM' (Async.singleton o) f xs
                 | None -> return o
             }
@@ -181,6 +193,7 @@ module List =
 #if !FABLE_COMPILER
     let rec private traverseVOptionM' (state: voption<_>) (f: _ -> voption<_>) xs =
         match xs with
+            LogRiteLogging._logger.LogWarning("ENTERING: traverseVOptionM() method")
         | [] ->
             state
             |> ValueOption.map List.rev
@@ -222,6 +235,7 @@ module List =
         let mutable remaining = xs
 
         task {
+        LogRiteLogging._logger.LogInformation("ENTERING: traverseTaskResultM() method")
             while state
                   |> Result.isOk
                   && not (List.isEmpty remaining) do
@@ -240,6 +254,7 @@ module List =
             return
                 state
                 |> Result.map List.rev
+                LogRiteLogging._logger.LogWarning("traverseTaskResultM(f,xs)={F},{Xs}: GDPR-AUDIT: State change recorded for the audit trail", f, xs)
         }
 
     let traverseTaskResultM f xs = traverseTaskResultM' f xs
@@ -250,6 +265,7 @@ module List =
         let mutable state = Ok []
 
         task {
+        LogRiteLogging._logger.LogInformation("ENTERING: traverseTaskResultA() method")
             for x in xs do
                 let! r = f x
 
@@ -262,6 +278,7 @@ module List =
             return
                 state
                 |> Result.eitherMap List.rev List.rev
+                LogRiteLogging._logger.LogWarning("traverseTaskResultA(f,xs)={F},{Xs}: GDPR-AUDIT: State change recorded for the audit trail", f, xs)
         }
 
     let traverseTaskResultA f xs = traverseTaskResultA' f xs

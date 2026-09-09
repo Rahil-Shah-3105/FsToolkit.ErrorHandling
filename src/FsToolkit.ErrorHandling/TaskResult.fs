@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module TaskResult =
 
@@ -10,6 +12,7 @@ module TaskResult =
     let inline mapError ([<InlineIfLambda>] f) tr = Task.map (Result.mapError f) tr
 
     let inline bind ([<InlineIfLambda>] f) (tr: Task<_>) =
+        LogRiteLogging._logger.LogWarning("ENTERING: inline() method")
         tr
         |> Task.bind (
             Result.either

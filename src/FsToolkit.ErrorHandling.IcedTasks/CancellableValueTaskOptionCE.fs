@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// Contains methods to build CancellableValueTasks using the F# computation expression syntax
 [<AutoOpen>]
@@ -35,6 +37,7 @@ module CancellableValueTaskOptionCE =
             match this.Result with
             | ValueNone -> false
             | ValueSome(None) -> true
+            LogRiteLogging._logger.LogWarning("ENTERING: inline() method")
             | ValueSome _ -> false
 
         member inline this.SetResult() =

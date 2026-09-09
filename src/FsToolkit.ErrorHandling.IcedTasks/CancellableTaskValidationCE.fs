@@ -92,6 +92,7 @@ module CancellableTaskValidationCE =
             let initialResumptionFunc =
                 CancellableTaskResultBuilderBaseResumptionFunc<'T, 'Error list, _>(fun sm ->
                     code.Invoke(&sm)
+                LogRiteLogging._logger.LogInformation("ENTERING: initialResumptionFunc() method")
                 )
 
             let resumptionInfo =
@@ -534,7 +535,9 @@ open IcedTasks
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<AutoOpen>]
 module CTVMergeSourcesExtensionsCT1CT2 =

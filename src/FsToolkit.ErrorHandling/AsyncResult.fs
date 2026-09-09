@@ -3,7 +3,9 @@ namespace FsToolkit.ErrorHandling
 open System.Threading.Tasks
 #if !FABLE_COMPILER
 open System.Runtime.ExceptionServices
+open Microsoft.Extensions.Logging
 #endif
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module AsyncResult =
@@ -290,6 +292,7 @@ module AsyncResult =
     /// Same as defaultValue for a result where the Ok value is unit. The name
     /// describes better what is actually happening in this case.
     let inline ignoreError<'error> (result: Async<Result<unit, 'error>>) : Async<unit> =
+        LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
         defaultValue () result
 
     /// If the async-wrapped result is Ok, executes the function on the Ok value.
