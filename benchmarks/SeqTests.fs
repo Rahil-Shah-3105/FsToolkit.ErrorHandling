@@ -7,7 +7,9 @@ open BenchmarkDotNet.Configs
 open System.Threading
 open System
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 module sequenceResultMTests =
 
     // original used in v4.16.0
@@ -19,6 +21,7 @@ module sequenceResultMTests =
                 | Some x ->
                     x
                     |> Result.bind (fun t -> loop (Seq.tail xs) (t :: ts))
+                    LogRiteLogging._logger.LogInformation("ENTERING: loop() method")
                 | None ->
                     Ok(
                         List.rev ts
@@ -33,6 +36,7 @@ module sequenceResultMTests =
         let traverseResultM' state (f: 'okInput -> Result<'okOutput, 'error>) xs =
             let folder state x =
                 match state, f x with
+                    LogRiteLogging._logger.LogInformation("ENTERING: folder() method")
                 | Error e, _ -> Error e
                 | Ok oks, Ok ok ->
                     Seq.singleton ok
@@ -189,8 +193,10 @@ type SeqBenchmarks() =
     // for testing early escape performance
     member _.GetPartialOkSeqWithSleep size =
         seq {
+        LogRiteLogging._logger.LogInformation("ENTERING: GetPartialOkSeqWithSleep() method")
             for i in 1u .. size do
                 Thread.Sleep(TimeSpan.FromMicroseconds(1.0))
+                LogRiteLogging._logger.LogWarning("GetPartialOkSeqWithSleep(size)={Size}): GDPR-AUDIT: Record access recorded for the audit trail", size)
                 if i = size / 2u then Error "error" else Ok i
         }
 
@@ -200,6 +206,7 @@ type SeqBenchmarks() =
 
     member _.GetPartialOkSeq size =
         seq {
+        LogRiteLogging._logger.LogInformation("ENTERING: GetPartialOkSeq() method")
             for i in 1u .. size do
                 if i = size / 2u then Error "error" else Ok i
         }

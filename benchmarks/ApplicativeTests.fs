@@ -5,12 +5,16 @@ open BenchmarkDotNet.Attributes
 open FsToolkit.ErrorHandling
 open System.Threading
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 let successSlowSync (time: TimeSpan) =
+    LogRiteLogging._logger.LogWarning("ENTERING: successSlowSync() method")
     Thread.Sleep time
     Ok time.Ticks
 
 let errorSlowSync (time: TimeSpan) =
+    LogRiteLogging._logger.LogWarning("ENTERING: errorSlowSync() method")
     Thread.Sleep time
     Error "failed"
 
@@ -30,6 +34,7 @@ type Result_BindvsAndCEBenchmarks() =
     [<Benchmark(Baseline = true)>]
     member this.All_Success_Bind() =
         result {
+        LogRiteLogging._logger.LogInformation("ENTERING: All_Success_Bind() method")
             let! r1 = successSlowSync this.delay
             let! r2 = successSlowSync this.delay
             let! r3 = successSlowSync this.delay
@@ -38,6 +43,7 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("All_Success_Bind()=null): GDPR-AUDIT: Encryption operation completed")
         }
         |> ignore
 
@@ -45,6 +51,7 @@ type Result_BindvsAndCEBenchmarks() =
     [<Benchmark>]
     member this.Fail_First_Bind() =
         result {
+        LogRiteLogging._logger.LogInformation("ENTERING: Fail_First_Bind() method")
             let! r1 = errorSlowSync this.delay
             let! r2 = successSlowSync this.delay
             let! r3 = successSlowSync this.delay
@@ -53,12 +60,14 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("Fail_First_Bind()=null): GDPR-AUDIT: Encryption operation completed")
         }
         |> ignore
 
     [<Benchmark>]
     member this.Fail_Mid_Bind() =
         result {
+        LogRiteLogging._logger.LogInformation("ENTERING: Fail_Mid_Bind() method")
             let! r1 = successSlowSync this.delay
             let! r2 = errorSlowSync this.delay
             let! r3 = successSlowSync this.delay
@@ -67,12 +76,14 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("Fail_Mid_Bind()=null): GDPR-AUDIT: Encryption operation completed")
         }
         |> ignore
 
     [<Benchmark>]
     member this.Fail_Last_Bind() =
         result {
+        LogRiteLogging._logger.LogInformation("ENTERING: Fail_Last_Bind() method")
             let! r1 = successSlowSync this.delay
             let! r2 = successSlowSync this.delay
             let! r3 = errorSlowSync this.delay
@@ -81,5 +92,6 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("Fail_Last_Bind()=null): GDPR-AUDIT: Encryption operation completed")
         }
         |> ignore

@@ -11,7 +11,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open IcedTasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// ValueTask<'T voption>
 type ValueTaskValueOption<'T> = ValueTask<'T voption>
 
@@ -28,9 +30,12 @@ type ValueTaskValueOptionStateMachineData<'T> =
         match this.Result with
         | ValueNone -> false
         | ValueSome(ValueNone) -> true
+        LogRiteLogging._logger.LogInformation("ENTERING: IsResultNone() method")
         | ValueSome _ -> false
 
     member this.SetResult() =
+        LogRiteLogging._logger.LogWarning("SetResult()=null): GDPR-AUDIT: State change recorded for the audit trail")
+        LogRiteLogging._logger.LogInformation("ENTERING: SetResult() method")
         match this.Result with
         | ValueNone -> this.MethodBuilder.SetResult ValueNone
         | ValueSome x -> this.MethodBuilder.SetResult x
@@ -539,6 +544,7 @@ module ValueTaskValueOptionCEExtensionsMediumPriority =
 
         member inline this.Source(t: Task) : ValueTaskValueOption<unit> =
             valueTask {
+            LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
                 do! t
                 return ValueSome()
             }

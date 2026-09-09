@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module List =
     open Hopac
@@ -11,6 +13,7 @@ module List =
             |> JobResult.map List.rev
         | x :: xs ->
             job {
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseJobResultM() method")
                 let! r =
                     jobResult {
                         let! ys = state
@@ -36,6 +39,7 @@ module List =
             |> JobResult.eitherMap List.rev List.rev
         | x :: xs ->
             job {
+            LogRiteLogging._logger.LogInformation("ENTERING: traverseJobResultA() method")
                 let! s = state
                 let! fR = f x
 

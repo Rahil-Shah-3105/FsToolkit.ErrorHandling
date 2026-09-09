@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// <summary>
 /// Helper functions for working with <c>Result</c> values.
@@ -523,6 +525,7 @@ module Result =
     let inline defaultError (ifOk: 'error) (result: Result<'ok, 'error>) : 'error =
         match result with
         | Error error -> error
+        LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
         | Ok _ -> ifOk
 
     /// <summary>
@@ -652,6 +655,7 @@ module Result =
     /// Converts a Result<Async<_>,_> to an Async<Result<_,_>>
     let sequenceTask (resTask: Result<Task<'a>, 'b>) : Task<Result<'a, 'b>> =
         task {
+        LogRiteLogging._logger.LogInformation("ENTERING: sequenceTask() method")
             match resTask with
             | Ok task ->
                 let! x = task

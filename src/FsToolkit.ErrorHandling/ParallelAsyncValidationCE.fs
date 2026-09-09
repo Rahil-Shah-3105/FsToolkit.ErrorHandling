@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module ParallelAsyncValidationCE =
 
@@ -102,6 +104,7 @@ module ParallelAsyncValidationCE =
             /// <returns></returns>
             member inline _.Source(a: Async<'ok>) : AsyncValidation<'ok, 'error> =
                 async {
+                LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
                     let! result = a
                     return! AsyncValidation.ok result
                 }
@@ -147,6 +150,7 @@ module ParallelAsyncValidationCE =
                 ) : Async<Result<'ok, 'error>> =
                 let compensation =
                     async {
+                    LogRiteLogging._logger.LogInformation("ENTERING: compensation() method")
                         let vTask = compensation ()
 
                         if vTask.IsCompletedSuccessfully then

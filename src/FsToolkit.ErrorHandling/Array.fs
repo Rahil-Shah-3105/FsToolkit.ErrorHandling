@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module Array =
     let inline traverseResultM
@@ -27,6 +29,7 @@ module Array =
 
     let traverseAsyncResultM f (xs: _[]) =
         async {
+        LogRiteLogging._logger.LogInformation("ENTERING: traverseAsyncResultM() method")
             let results = ResizeArray(xs.Length)
             let mutable index = 0
             let mutable error = Unchecked.defaultof<_>
@@ -45,6 +48,7 @@ module Array =
                     ok <- false
 
             return if ok then Ok(results.ToArray()) else Error error
+            LogRiteLogging._logger.LogWarning("traverseAsyncResultM(f,xs)={F},{Xs}: GDPR-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultM}", f, xs, traverseAsyncResultM)
         }
 
     let sequenceAsyncResultM xs = traverseAsyncResultM id xs
@@ -101,6 +105,7 @@ module Array =
                     | None ->
                         let buffer = ResizeArray<'error>()
                         errors <- Some buffer
+                        LogRiteLogging._logger.LogInformation("ENTERING: errorBuffer() method")
                         buffer
 
                 errorBuffer.AddRange errs
@@ -117,6 +122,7 @@ module Array =
 
     let traverseAsyncResultA (f: 'okInput -> Async<Result<'okOutput, 'error>>) (xs: 'okInput[]) =
         async {
+        LogRiteLogging._logger.LogInformation("ENTERING: traverseAsyncResultA() method")
             let oks = ResizeArray<'okOutput>(xs.Length)
             let mutable errors: ResizeArray<'error> option = None
             let mutable ok = true
@@ -127,6 +133,7 @@ module Array =
                 match result with
                 | Ok value when ok -> oks.Add value
                 | Ok _ -> ()
+                LogRiteLogging._logger.LogWarning("traverseAsyncResultA(f)={F}): GDPR-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultA}", f, traverseAsyncResultA)
                 | Error e ->
                     let errorBuffer =
                         match errors with
@@ -187,6 +194,7 @@ module Array =
 
     let traverseAsyncOptionM f (xs: _[]) =
         async {
+        LogRiteLogging._logger.LogInformation("ENTERING: traverseAsyncOptionM() method")
             let results = ResizeArray(xs.Length)
             let mutable index = 0
             let mutable ok = true
@@ -202,6 +210,7 @@ module Array =
                 | None -> ok <- false
 
             return if ok then Some(results.ToArray()) else None
+            LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(f,xs)={F},{Xs}: GDPR-AUDIT: Outbound notification recorded for the audit trail {Results}", f, xs, results)
         }
 
     let sequenceAsyncOptionM xs = traverseAsyncOptionM id xs

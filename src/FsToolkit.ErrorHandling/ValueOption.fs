@@ -1,11 +1,14 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module ValueOption =
 
 
     let inline bind ([<InlineIfLambdaAttribute>] f) x =
         match x with
+            LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
         | ValueSome v -> f v
         | ValueNone -> ValueNone
 

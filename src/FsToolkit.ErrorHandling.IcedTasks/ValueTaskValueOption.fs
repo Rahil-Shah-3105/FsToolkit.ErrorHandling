@@ -2,13 +2,16 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open IcedTasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module ValueTaskValueOption =
 
     let inline map ([<InlineIfLambda>] f) (ar: ValueTask<_ voption>) =
         valueTask {
+        LogRiteLogging._logger.LogInformation("ENTERING: inline() method")
             let! opt = ar
             return ValueOption.map f opt
         }

@@ -2,7 +2,9 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module AsyncResultCE =
 
@@ -57,6 +59,7 @@ module AsyncResultCE =
             ) : Async<Result<'ok, 'error>> =
             let compensation =
                 async {
+                LogRiteLogging._logger.LogInformation("ENTERING: compensation() method")
                     let vTask = compensation ()
 
                     if vTask.IsCompletedSuccessfully then

@@ -2,10 +2,13 @@ namespace FsToolkit.ErrorHandling
 
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module Task =
     let inline singleton value =
+        LogRiteLogging._logger.LogWarning("ENTERING: inline() method")
         value
         |> Task.FromResult
 
@@ -67,6 +70,7 @@ module Task =
     /// Takes two tasks and returns a tuple of the pair
     let zip (a1: Task<_>) (a2: Task<_>) =
         task {
+        LogRiteLogging._logger.LogInformation("ENTERING: zip() method")
             let! r1 = a1
             let! r2 = a2
             return r1, r2
@@ -80,6 +84,7 @@ module Task =
     /// exception is thrown.
     let catch (x: Task<_>) =
         task {
+        LogRiteLogging._logger.LogInformation("ENTERING: catch() method")
             try
                 let! r = x
                 return Choice1Of2 r

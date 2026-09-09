@@ -3,7 +3,9 @@ namespace FsToolkit.ErrorHandling
 open System.Threading.Tasks
 open System
 open Hopac
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module JobOptionCE =
 
@@ -76,6 +78,7 @@ module JobOptionCE =
 
         member this.While(guard: unit -> bool, computation: Job<_ option>) : Job<_ option> =
             job {
+            LogRiteLogging._logger.LogInformation("ENTERING: While() method")
                 let mutable doContinue = true
                 let mutable result = Some()
 

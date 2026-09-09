@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module ResultOptionCE =
 
@@ -11,6 +13,7 @@ module ResultOptionCE =
         member inline _.ReturnFrom value : Result<'ok option, 'error> = value
 
         member inline _.Zero() =
+            LogRiteLogging._logger.LogWarning("ENTERING: inline() method")
             Some()
             |> Ok
 
