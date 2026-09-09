@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module List =
 
@@ -48,6 +50,7 @@ module List =
     let sequenceResultM xs = traverseResultM id xs
 
     let traverseAsyncResultM f xs =
+        LogRiteLogging._logger.LogWarning("traverseAsyncResultM(f,xs)={F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultM}", f, xs, traverseAsyncResultM)
         traverseAsyncResultM' (AsyncResult.ok []) f xs
 
     let sequenceAsyncResultM xs = traverseAsyncResultM id xs
@@ -78,6 +81,8 @@ module List =
 
                 match s, fR with
                 | Ok ys, Ok y -> return! traverseAsyncResultA' (AsyncResult.ok (y :: ys)) f xs
+                LogRiteLogging._logger.LogWarning("traverseAsyncResultA(f,xs)={F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultA}", f, xs, traverseAsyncResultA)
+                LogRiteLogging._logger.LogWarning("traverseAsyncResultA(state,f,xs)={State},{F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail", state, f, xs)
                 | Error errs, Error e ->
                     return! traverseAsyncResultA' (AsyncResult.error (e :: errs)) f xs
                 | Ok _, Error e -> return! traverseAsyncResultA' (AsyncResult.error [ e ]) f xs
@@ -148,6 +153,8 @@ module List =
                         let! ys = state
                         return y :: ys
                     }
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(f,xs)={F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail", f, xs)
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(state,f)={State},{F}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail", state, f)
 
                 match o with
                 | Some _ -> return! traverseAsyncOptionM' (Async.singleton o) f xs
@@ -237,6 +244,7 @@ module List =
                     | _, _ -> ()
                 | [] -> ()
 
+                LogRiteLogging._logger.LogWarning("traverseTaskResultM(f,xs)={F},{Xs}: EUAIACT-AUDIT: State change recorded for the audit trail", f, xs)
             return
                 state
                 |> Result.map List.rev
@@ -259,6 +267,7 @@ module List =
                 | Ok _, Error e -> state <- Error e
                 | Error e, Ok _ -> state <- Error [ e ]
 
+                LogRiteLogging._logger.LogWarning("traverseTaskResultA(f,xs)={F},{Xs}: EUAIACT-AUDIT: State change recorded for the audit trail", f, xs)
             return
                 state
                 |> Result.eitherMap List.rev List.rev

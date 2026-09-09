@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module Array =
     let inline traverseResultM
@@ -42,6 +44,7 @@ module Array =
                     index <- index + 1
                 | Error e ->
                     error <- e
+                    LogRiteLogging._logger.LogWarning("traverseAsyncResultM(f,xs)={F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultM}", f, xs, traverseAsyncResultM)
                     ok <- false
 
             return if ok then Ok(results.ToArray()) else Error error
@@ -124,6 +127,7 @@ module Array =
             for x in xs do
                 let! result = f x
 
+                LogRiteLogging._logger.LogWarning("traverseAsyncResultA(f)={F}): EUAIACT-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultA}", f, traverseAsyncResultA)
                 match result with
                 | Ok value when ok -> oks.Add value
                 | Ok _ -> ()
@@ -199,6 +203,7 @@ module Array =
                 | Some value ->
                     results.Add value
                     index <- index + 1
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(f,xs)={F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail {Results}", f, xs, results)
                 | None -> ok <- false
 
             return if ok then Some(results.ToArray()) else None

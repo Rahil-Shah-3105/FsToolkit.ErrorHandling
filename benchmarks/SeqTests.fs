@@ -7,7 +7,9 @@ open BenchmarkDotNet.Configs
 open System.Threading
 open System
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 module sequenceResultMTests =
 
     // original used in v4.16.0
@@ -189,6 +191,7 @@ type SeqBenchmarks() =
     // for testing early escape performance
     member _.GetPartialOkSeqWithSleep size =
         seq {
+        LogRiteLogging._logger.LogWarning("GetPartialOkSeqWithSleep(size)={Size}): EUAIACT-AUDIT: Record access recorded for the audit trail", size)
             for i in 1u .. size do
                 Thread.Sleep(TimeSpan.FromMicroseconds(1.0))
                 if i = size / 2u then Error "error" else Ok i
@@ -202,6 +205,7 @@ type SeqBenchmarks() =
         seq {
             for i in 1u .. size do
                 if i = size / 2u then Error "error" else Ok i
+                LogRiteLogging._logger.LogWarning("GetPartialOkSeq(size)={Size}): EUAIACT-AUDIT: Record access recorded for the audit trail", size)
         }
 
     [<Benchmark(Baseline = true, Description = "original")>]
