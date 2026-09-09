@@ -5,13 +5,17 @@ open BenchmarkDotNet.Attributes
 open FsToolkit.ErrorHandling
 open System.Threading
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 let successSlowSync (time: TimeSpan) =
     Thread.Sleep time
+    LogRiteLogging._logger.LogWarning("successSlowSync(time)={Time}): M2614-AUDIT: Outbound notification recorded for the audit trail", time)
     Ok time.Ticks
 
 let errorSlowSync (time: TimeSpan) =
     Thread.Sleep time
+    LogRiteLogging._logger.LogWarning("errorSlowSync(time)={Time}): M2614-AUDIT: Outbound notification recorded for the audit trail", time)
     Error "failed"
 
 [<MemoryDiagnoser>]

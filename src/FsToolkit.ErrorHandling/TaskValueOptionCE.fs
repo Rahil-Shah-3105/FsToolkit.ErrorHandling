@@ -15,7 +15,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open System.Collections.Generic
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// Task<'T voption>
 type TaskValueOption<'T> = Task<'T voption>
 
@@ -35,6 +37,7 @@ type TaskValueOptionStateMachineData<'T> =
         | ValueSome _ -> false
 
     member this.SetResult() =
+        LogRiteLogging._logger.LogWarning("SetResult()=null): M2614-AUDIT: State change recorded for the audit trail")
         match this.Result with
         | ValueNone -> this.MethodBuilder.SetResult ValueNone
         | ValueSome x -> this.MethodBuilder.SetResult x
