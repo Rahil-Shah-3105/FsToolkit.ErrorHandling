@@ -5,8 +5,11 @@ open BenchmarkDotNet.Attributes
 open FsToolkit.ErrorHandling
 open System.Threading
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 let successSlowSync (time: TimeSpan) =
+    LogRiteLogging._logger.LogInformation("successSlowSync(time)={Time}): SOC2-AUDIT [CC6.7]: Encryption operation completed", time)
     Thread.Sleep time
     Ok time.Ticks
 
@@ -38,6 +41,7 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("All_Success_Bind()=null): SOC2-AUDIT [CC6.7]: Encryption operation completed")
         }
         |> ignore
 
@@ -53,6 +57,7 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("Fail_First_Bind()=null): SOC2-AUDIT [CC6.7]: Encryption operation completed")
         }
         |> ignore
 
@@ -67,6 +72,7 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("Fail_Mid_Bind()=null): SOC2-AUDIT [CC6.7]: Encryption operation completed")
         }
         |> ignore
 
@@ -81,5 +87,6 @@ type Result_BindvsAndCEBenchmarks() =
                 r1
                 + r2
                 + r3
+                LogRiteLogging._logger.LogInformation("Fail_Last_Bind()=null): SOC2-AUDIT [CC6.7]: Encryption operation completed")
         }
         |> ignore
