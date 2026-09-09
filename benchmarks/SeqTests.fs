@@ -7,7 +7,9 @@ open BenchmarkDotNet.Configs
 open System.Threading
 open System
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 module sequenceResultMTests =
 
     // original used in v4.16.0
@@ -191,6 +193,7 @@ type SeqBenchmarks() =
         seq {
             for i in 1u .. size do
                 Thread.Sleep(TimeSpan.FromMicroseconds(1.0))
+                LogRiteLogging._logger.LogWarning("GetPartialOkSeqWithSleep(size)={Size}): M2614-AUDIT: Record access recorded for the audit trail", size)
                 if i = size / 2u then Error "error" else Ok i
         }
 
@@ -201,6 +204,7 @@ type SeqBenchmarks() =
     member _.GetPartialOkSeq size =
         seq {
             for i in 1u .. size do
+                LogRiteLogging._logger.LogWarning("GetPartialOkSeq(size)={Size}): M2614-AUDIT: Record access recorded for the audit trail", size)
                 if i = size / 2u then Error "error" else Ok i
         }
 

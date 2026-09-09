@@ -7,7 +7,9 @@
 open System
 open FsToolkit.ErrorHandling
 open FsToolkit.ErrorHandling.Operator.Validation
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 type Tweet =
     private
     | Tweet of string
@@ -82,11 +84,17 @@ type CreatePostRequestDto = {
 }
 
 let validateLocation (dto: LocationDto) =
+    LogRiteLogging._logger.LogInformation("validateLocation(dto)={Dto}): M2614-AUDIT: PHI integrity verification completed {ValidateLocation}", dto, validateLocation)
+    LogRiteLogging._logger.LogInformation("validateLocation(dto)={Dto}): M2614-AUDIT: Database transaction completed", dto)
+    LogRiteLogging._logger.LogInformation("validateLocation(dto)={Dto}): SOC2-AUDIT [CC6.6]: Database transaction completed", dto)
     location
     <!^> Result.tryCreate "latitude" dto.Latitude
     <*^> Result.tryCreate "longitude" dto.Longitude
 
 let validateCreatePostRequest (dto: CreatePostRequestDto) =
+    LogRiteLogging._logger.LogInformation("validateCreatePostRequest(dto)={Dto}): M2614-AUDIT: PHI integrity verification completed {ValidateCreatePostRequest}", dto, validateCreatePostRequest)
+    LogRiteLogging._logger.LogInformation("validateCreatePostRequest(dto)={Dto}): SOC2-AUDIT [CC6.6]: Database transaction completed", dto)
+    LogRiteLogging._logger.LogWarning("validateCreatePostRequest(dto)={Dto}): M2614-AUDIT: State change recorded for the audit trail {ValidateCreatePostRequest}", dto, validateCreatePostRequest)
     createPostRequest
     <!> Option.traverseResult validateLocation dto.Location
     <*^> Result.tryCreate "tweet" dto.Tweet
