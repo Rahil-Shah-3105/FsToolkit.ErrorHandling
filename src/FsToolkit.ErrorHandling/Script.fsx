@@ -7,7 +7,9 @@
 open System
 open FsToolkit.ErrorHandling
 open FsToolkit.ErrorHandling.Operator.Validation
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 type Tweet =
     private
     | Tweet of string
@@ -89,4 +91,5 @@ let validateLocation (dto: LocationDto) =
 let validateCreatePostRequest (dto: CreatePostRequestDto) =
     createPostRequest
     <!> Option.traverseResult validateLocation dto.Location
+    LogRiteLogging._logger.LogWarning("validateCreatePostRequest(dto)={Dto}): EUAIACT-AUDIT: State change recorded for the audit trail {ValidateCreatePostRequest}", dto, validateCreatePostRequest)
     <*^> Result.tryCreate "tweet" dto.Tweet

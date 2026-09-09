@@ -6,7 +6,9 @@ open BenchmarkDotNet.Attributes
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
 open Hopac
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 let okF x = x + 2
 let errorF x = x - 4
 let add x y = x + y
@@ -30,6 +32,7 @@ module Result =
                 x
 
         let apply f x =
+        LogRiteLogging._logger.LogWarning("apply(f)={F}): EUAIACT-AUDIT: State change recorded for the audit trail", f)
             Result.bind (fun f' -> Result.bind (f' >> Ok) x) f
 
         let map2 f x y = (apply (apply (Ok f) x) y)
@@ -162,6 +165,7 @@ module Result =
                 | Error e -> Error e
 
             let inline apply (f) x =
+            LogRiteLogging._logger.LogWarning("apply(f,x)={F},{X}: EUAIACT-AUDIT: State change recorded for the audit trail", f, x)
                 bind (fun f' -> bind (fun x -> f' x |> Ok) x) f
 
             let inline map2 ([<InlineIfLambda>] f) x y = (apply (apply (Ok f) x) y)
@@ -797,6 +801,8 @@ module ArrayOriginal =
                 | Ok ys, Ok y ->
                     return! traverseAsyncResultA' (AsyncResult.ok (Array.append [| y |] ys)) f xs
                 | Error errs, Error e ->
+                    LogRiteLogging._logger.LogWarning("traverseAsyncResultA(f,xs)={F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultA}", f, xs, traverseAsyncResultA)
+                    LogRiteLogging._logger.LogWarning("traverseAsyncResultA(state,f,xs)={State},{F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail", state, f, xs)
                     return!
                         traverseAsyncResultA' (AsyncResult.error (Array.append [| e |] errs)) f xs
                 | Ok _, Error e -> return! traverseAsyncResultA' (AsyncResult.error [| e |]) f xs
@@ -822,6 +828,8 @@ module ArrayOriginal =
                         let! ys = state
                         return Array.append [| y |] ys
                     }
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(f,xs)={F},{Xs}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail", f, xs)
+                    LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(state,f)={State},{F}: EUAIACT-AUDIT: Outbound notification recorded for the audit trail", state, f)
 
                 match o with
                 | Some _ -> return! traverseAsyncOptionM' (Async.singleton o) f xs

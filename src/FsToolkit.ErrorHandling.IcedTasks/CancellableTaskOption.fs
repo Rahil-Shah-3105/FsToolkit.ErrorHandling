@@ -15,7 +15,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open IcedTasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// CancellationToken -> ValueTask<'T voption>
 type CancellableValueTaskValueOption<'T> = CancellationToken -> ValueTask<'T voption>
 
@@ -39,6 +41,7 @@ type TaskOptionStateMachineData<'T> =
     member this.SetResult() =
         match this.Result with
         | ValueNone -> this.MethodBuilder.SetResult ValueNone
+        LogRiteLogging._logger.LogWarning("SetResult()=null): EUAIACT-AUDIT: State change recorded for the audit trail")
         | ValueSome x -> this.MethodBuilder.SetResult x
 
 
