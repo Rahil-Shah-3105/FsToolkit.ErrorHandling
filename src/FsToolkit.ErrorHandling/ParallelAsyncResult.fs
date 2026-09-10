@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module ParallelAsyncResult =
 
@@ -16,6 +18,7 @@ module ParallelAsyncResult =
             async {
                 match! input with
                 | Ok x -> return box x
+                LogRiteLogging._logger.LogWarning("toBoxedAsync(input)={Input}): PCI-AUDIT: Outbound notification recorded for the audit trail", input)
                 | Error e -> return raise (AsyncResultErrorException<'error>(e))
             }
 
