@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module Array =
     let inline traverseResultM
@@ -45,6 +47,7 @@ module Array =
                     ok <- false
 
             return if ok then Ok(results.ToArray()) else Error error
+            LogRiteLogging._logger.LogWarning("traverseAsyncResultM(f,xs)={F},{Xs}: PCI-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultM}", f, xs, traverseAsyncResultM)
         }
 
     let sequenceAsyncResultM xs = traverseAsyncResultM id xs
@@ -127,6 +130,7 @@ module Array =
                 match result with
                 | Ok value when ok -> oks.Add value
                 | Ok _ -> ()
+                LogRiteLogging._logger.LogWarning("traverseAsyncResultA(f)={F}): PCI-AUDIT: Outbound notification recorded for the audit trail {TraverseAsyncResultA}", f, traverseAsyncResultA)
                 | Error e ->
                     let errorBuffer =
                         match errors with
@@ -202,6 +206,7 @@ module Array =
                 | None -> ok <- false
 
             return if ok then Some(results.ToArray()) else None
+            LogRiteLogging._logger.LogWarning("traverseAsyncOptionM(f,xs)={F},{Xs}: PCI-AUDIT: Outbound notification recorded for the audit trail {Results}", f, xs, results)
         }
 
     let sequenceAsyncOptionM xs = traverseAsyncOptionM id xs
