@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// Contains methods to build CancellableValueTasks using the F# computation expression syntax
 [<AutoOpen>]
@@ -32,12 +34,16 @@ module CancellableValueTaskOptionCE =
         val mutable MethodBuilder: AsyncValueTaskOptionMethodBuilder<'T>
 
         member inline this.IsResultNone =
+            LogRiteLogging._logger.LogError(">>> Entering IsResultNone()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting IsResultNone()")
             match this.Result with
             | ValueNone -> false
             | ValueSome(None) -> true
             | ValueSome _ -> false
 
         member inline this.SetResult() =
+            LogRiteLogging._logger.LogError(">>> Entering SetResult()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting SetResult()")
             match this.Result with
             | ValueNone -> this.MethodBuilder.SetResult None
             | ValueSome x -> this.MethodBuilder.SetResult x
@@ -46,6 +52,7 @@ module CancellableValueTaskOptionCE =
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
         /// <exception cref="T:System.ObjectDisposedException">The associated <see cref="T:System.Threading.CancellationTokenSource" /> has been disposed.</exception>
         member inline this.ThrowIfCancellationRequested() =
+            LogRiteLogging._logger.LogError(">>> Entering ThrowIfCancellationRequested()")
             this.CancellationToken.ThrowIfCancellationRequested()
 
     and AsyncValueTaskOptionMethodBuilder<'TOverall> = AsyncValueTaskMethodBuilder<'TOverall option>
@@ -87,7 +94,9 @@ module CancellableValueTaskOptionCE =
         /// <returns>A CancellableValueTasks that returns ().</returns>
         [<DefaultValue>]
         member inline _.Zero() : CancellableValueTaskOptionBuilderBaseCode<'TOverall, unit> =
+            LogRiteLogging._logger.LogError(">>> Entering Zero()")
             CancellableValueTaskOptionBuilderBaseCode<_, _>(fun sm ->
+                LogRiteLogging._logger.LogWarning("<<< Exiting Zero()")
                 sm.Data.Result <- ValueSome(Some Unchecked.defaultof<'TOverall>)
                 true
             )
@@ -104,7 +113,9 @@ module CancellableValueTaskOptionCE =
         /// <returns>A cancellableValueTasks that returns value when executed.</returns>
         member inline _.Return(value: 'T) : CancellableValueTaskOptionBuilderBaseCode<'T, 'T> =
             CancellableValueTaskOptionBuilderBaseCode<'T, 'T>(fun sm ->
+                LogRiteLogging._logger.LogError(">>> Entering Return(value={Value})", value)
                 sm.Data.Result <- ValueSome(Some value)
+                LogRiteLogging._logger.LogWarning("<<< Exiting Return(value={Value})", value)
                 true
             )
 
@@ -1030,6 +1041,7 @@ module CancellableValueTaskOptionCE =
             ///
             /// <returns>CancellationToken -> 'Awaiter</returns>
             member inline this.Source(computation: Async<'T>) =
+                LogRiteLogging._logger.LogError(">>> Entering Source(computation={Computation})", computation)
                 this.Source(Async.AsCancellableTask(computation))
 
 
@@ -1221,6 +1233,7 @@ module CancellableValueTaskOptionCE =
             let resumptionInfo =
                 { new CancellableValueTaskOptionBuilderBaseResumptionDynamicInfo<'T>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
+                        LogRiteLogging._logger.LogError(">>> Entering MoveNext(sm={Sm})", sm)
                         let mutable savedExn = null
 
                         try
@@ -1228,10 +1241,12 @@ module CancellableValueTaskOptionCE =
                             let step = info.ResumptionFunc.Invoke(&sm)
 
                             if step then
+                                LogRiteLogging._logger.LogError("MoveNext(sm={Sm}): step → {Step}", sm, step)
                                 sm.Data.SetResult()
                             else
                                 match sm.ResumptionDynamicInfo.ResumptionData with
                                 | :? ICriticalNotifyCompletion as awaiter ->
+                                    LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, awaiter.Message)
                                     let mutable awaiter = awaiter
 
                                     MethodBuilder.AwaitUnsafeOnCompleted(
@@ -1242,6 +1257,7 @@ module CancellableValueTaskOptionCE =
                                 | awaiter -> assert not (isNull awaiter)
 
                         with exn ->
+                            LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, exn.Message)
                             savedExn <- exn
                         // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                         match savedExn with
@@ -1249,6 +1265,7 @@ module CancellableValueTaskOptionCE =
                         | exn -> MethodBuilder.SetException(&sm.Data.MethodBuilder, exn)
 
                     member _.SetStateMachine(sm, state) =
+                        LogRiteLogging._logger.LogError(">>> Entering SetStateMachine(sm={Sm},state={State})", sm, state)
                         MethodBuilder.SetStateMachine(&sm.Data.MethodBuilder, state)
                 }
 
@@ -1474,6 +1491,7 @@ module CancellableValueTaskOption =
     /// followed by "Tasks Finished".
     /// </example>
     let inline getCancellationToken () =
+        LogRiteLogging._logger.LogError(">>> Entering getCancellationToken()")
         fun (ct: CancellationToken) -> ValueTask<CancellationToken> ct
 
     /// <summary>Lifts an item to a CancellableValueTaskOption.</summary>

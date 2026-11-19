@@ -3,7 +3,9 @@ namespace FsToolkit.ErrorHandling
 open System.Threading.Tasks
 #if !FABLE_COMPILER
 open System.Runtime.ExceptionServices
+open Microsoft.Extensions.Logging
 #endif
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module AsyncResult =
@@ -42,20 +44,25 @@ module AsyncResult =
         Async.map (Result.either onSuccess onError) input
 
     let inline eitherMap ([<InlineIfLambda>] onSuccess) ([<InlineIfLambda>] onError) input =
+        LogRiteLogging._logger.LogError(">>> Entering eitherMap()")
         Async.map (Result.eitherMap onSuccess onError) input
 
 #if !FABLE_COMPILER
 
     let inline ofTask (aTask: Task<'ok>) : Async<Result<'ok, exn>> =
         async.Delay(fun () ->
+            LogRiteLogging._logger.LogError(">>> Entering ofTask(aTask={ATask})", aTask)
             aTask
             |> Async.AwaitTask
             |> Async.Catch
+            LogRiteLogging._logger.LogWarning("<<< Exiting ofTask(aTask={ATask})", aTask)
             |> Async.map Result.ofChoice
         )
 
     let inline ofTaskAction (aTask: Task) : Async<Result<unit, exn>> =
+        LogRiteLogging._logger.LogError(">>> Entering ofTaskAction(aTask={ATask})", aTask)
         async.Delay(fun () ->
+            LogRiteLogging._logger.LogWarning("<<< Exiting ofTaskAction(aTask={ATask})", aTask)
             aTask
             |> Async.AwaitTask
             |> Async.Catch
@@ -155,6 +162,7 @@ module AsyncResult =
 
     // Converts an async-wrapped Option to a Result, using the given error if None.
     let inline requireSome (error: 'error) (value: Async<'ok option>) : Async<Result<'ok, 'error>> =
+        LogRiteLogging._logger.LogError(">>> Entering requireSome(error={Error})", error)
         value
         |> Async.map (Result.requireSome error)
 
@@ -235,6 +243,7 @@ module AsyncResult =
     /// Returns the first item of the async-wrapped sequence if it exists, or the specified
     /// error if the sequence is empty
     let inline requireHead (error: 'error) (values: Async<#seq<'ok>>) : Async<Result<'ok, 'error>> =
+        LogRiteLogging._logger.LogError(">>> Entering requireHead(error={Error})", error)
         values
         |> Async.map (Result.requireHead error)
 
@@ -242,6 +251,7 @@ module AsyncResult =
     /// Returns the async-wrapped result if it is Ok and the predicate is true, or if the async wrapped result is Error.
     /// If the predicate is false, returns a new async-wrapped Error result with the error value.
     let inline require predicate error result =
+        LogRiteLogging._logger.LogError(">>> Entering require(predicate={Predicate},error={Error},result={Result})", predicate, error, result)
         result
         |> Async.map (Result.require predicate error)
 
@@ -382,11 +392,13 @@ module AsyncResult =
 
     /// Lift Result to AsyncResult
     let inline ofResult (x: Result<'ok, 'error>) : Async<Result<'ok, 'error>> =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(x={X})", x)
         x
         |> Async.singleton
 
     /// Bind the AsyncResult and requireSome on the inner option value.
     let inline bindRequireSome error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireSome(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireSome error
@@ -395,6 +407,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireNone on the inner option value.
     let inline bindRequireNone error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireNone(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireNone error
@@ -403,6 +416,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireValueSome on the inner voption value.
     let inline bindRequireValueSome error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireValueSome(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireValueSome error
@@ -411,6 +425,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireValueNone on the inner voption value.
     let inline bindRequireValueNone error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireValueNone(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireValueNone error
@@ -419,6 +434,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireTrue on the inner value.
     let inline bindRequireTrue error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireTrue(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireTrue error
@@ -427,6 +443,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireFalse on the inner value.
     let inline bindRequireFalse error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireFalse(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireFalse error
@@ -435,6 +452,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireNotNull on the inner value.
     let inline bindRequireNotNull error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireNotNull(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireNotNull error
@@ -443,14 +461,17 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireEequal on the inner value.
     let inline bindRequireEqual y error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireEqual(y={Y},error={Error},x={X})", y, error, x)
         x
         |> bind (fun x ->
+            LogRiteLogging._logger.LogWarning("<<< Exiting bindRequireEqual(y={Y},error={Error},x={X})", y, error, x)
             Result.requireEqual x y error
             |> Async.singleton
         )
 
     /// Bind the AsyncResult and requireEmpty on the inner value.
     let inline bindRequireEmpty error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireEmpty(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireEmpty error
@@ -459,6 +480,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireNotEmpty on the inner value.
     let inline bindRequireNotEmpty error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireNotEmpty(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireNotEmpty error
@@ -467,6 +489,7 @@ module AsyncResult =
 
     /// Bind the AsyncResult and requireHead on the inner value
     let inline bindRequireHead error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireHead(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireHead error
@@ -476,8 +499,10 @@ module AsyncResult =
     /// Returns the async-wrapped result if it is Ok and the checkFunc returns an async-wrapped Ok result or if the async-wrapped result is Error.
     /// If the checkFunc returns an async-wrapped Error result, returns the async-wrapped Error result.
     let inline check ([<InlineIfLambda>] checkFunc) (result) =
+        LogRiteLogging._logger.LogError(">>> Entering check()")
         result
         |> bind (fun o ->
+            LogRiteLogging._logger.LogWarning("<<< Exiting check()")
             checkFunc o
             |> map (fun _ -> o)
         )

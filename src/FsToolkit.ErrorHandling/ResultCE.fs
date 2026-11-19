@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module ResultCE =
 
@@ -137,4 +139,5 @@ module ResultCEChoiceExtensions =
         /// </summary>
         /// <returns></returns>
         member inline _.Source(choice: Choice<'ok, 'error>) : Result<'ok, 'error> =
+            LogRiteLogging._logger.LogError(">>> Entering Source(choice={Choice})", choice)
             Result.ofChoice choice

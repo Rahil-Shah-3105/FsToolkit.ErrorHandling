@@ -2,18 +2,24 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open IcedTasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module ValueTaskValueOption =
 
     let inline map ([<InlineIfLambda>] f) (ar: ValueTask<_ voption>) =
+        LogRiteLogging._logger.LogError(">>> Entering map()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting map()")
         valueTask {
             let! opt = ar
             return ValueOption.map f opt
         }
 
     let inline bind ([<InlineIfLambda>] f) (ar: ValueTask<_ voption>) =
+        LogRiteLogging._logger.LogError(">>> Entering bind()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
         valueTask {
             let! opt = ar
 
@@ -25,9 +31,12 @@ module ValueTaskValueOption =
     let inline valueSome x = ValueTask<_ voption>(ValueSome x)
 
     let inline apply f x =
+        LogRiteLogging._logger.LogError(">>> Entering apply(f={F},x={X})", f, x)
         bind (fun f' -> bind (fun x' -> valueSome (f' x')) x) f
 
     let inline zip (x1: ValueTask<'a voption>) (x2: ValueTask<'b voption>) =
+        LogRiteLogging._logger.LogError(">>> Entering zip(x1={X1})", x1)
+        LogRiteLogging._logger.LogWarning("<<< Exiting zip(x1={X1})", x1)
         valueTask {
             let! r1 = x1
             let! r2 = x2
@@ -65,6 +74,8 @@ module ValueTaskValueOption =
     /// The voption if the voption is <c>ValueSome</c>, else the default value.
     /// </returns>
     let inline defaultValue (value: 'value) (valueTaskValueOption: ValueTask<'value voption>) =
+        LogRiteLogging._logger.LogError(">>> Entering defaultValue(value={Value})", value)
+        LogRiteLogging._logger.LogWarning("<<< Exiting defaultValue(value={Value})", value)
         valueTask {
             let! opt = valueTaskValueOption
             return ValueOption.defaultValue value opt

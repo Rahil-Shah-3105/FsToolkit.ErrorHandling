@@ -2,7 +2,9 @@ namespace FsToolkit.ErrorHandling
 
 open System
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module AsyncResultOptionCE =
 
@@ -23,6 +25,7 @@ module AsyncResultOptionCE =
             AsyncResultOption.bind binder input
 
         member inline _.Combine(aro1, aro2) =
+            LogRiteLogging._logger.LogError(">>> Entering Combine(aro1={Aro1},aro2={Aro2})", aro1, aro2)
             aro1
             |> AsyncResultOption.bind (fun _ -> aro2)
 
@@ -125,6 +128,7 @@ module AsyncResultOptionCEExtensions =
         /// Method lets us transform data types into our internal representation.
         /// </summary>
         member inline this.Source(result: Choice<'ok, 'error>) : AsyncResultOption<'ok, 'error> =
+            LogRiteLogging._logger.LogError(">>> Entering Source(result={Result})", result)
             this.Source(Result.ofChoice result)
 
         /// <summary>

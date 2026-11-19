@@ -1,13 +1,16 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module ValidationCE =
     type ValidationBuilder() =
         member inline _.Return(value: 'ok) : Validation<'ok, 'error> = Validation.ok value
 
         member inline _.ReturnFrom(result: Validation<'ok, 'error>) : Validation<'ok, 'error> =
+            LogRiteLogging._logger.LogError(">>> Entering ReturnFrom(result={Result})", result)
             result
 
         member inline _.Bind
@@ -132,6 +135,7 @@ module ValidationCEExtensions =
         /// Method lets us transform data types into our internal representation.
         /// </summary>
         member inline _.Source(s: Result<'ok, 'error>) : Validation<'ok, 'error> =
+            LogRiteLogging._logger.LogError(">>> Entering Source(s={S})", s)
             Validation.ofResult s
 
         /// <summary>

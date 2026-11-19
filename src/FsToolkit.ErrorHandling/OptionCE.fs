@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module OptionCE =
     open System
@@ -31,13 +33,18 @@ module OptionCE =
 
 
         member inline this.TryWith([<InlineIfLambda>] computation, handler) : 'value =
+            LogRiteLogging._logger.LogError(">>> Entering TryWith(handler={Handler})", handler)
             try
+                LogRiteLogging._logger.LogWarning("<<< Exiting TryWith(handler={Handler})", handler)
                 computation ()
             with e ->
+                LogRiteLogging._logger.LogError("Exception in TryWith(handler={Handler}): {Arg1}", handler, e.Message)
                 handler e
 
         member inline this.TryFinally([<InlineIfLambda>] computation, compensation) =
+            LogRiteLogging._logger.LogError(">>> Entering TryFinally(compensation={Compensation})", compensation)
             try
+                LogRiteLogging._logger.LogWarning("<<< Exiting TryFinally(compensation={Compensation})", compensation)
                 computation ()
             finally
                 compensation ()
@@ -114,6 +121,7 @@ module OptionCE =
         member inline _.Source(o: 'a option) = Option.toValueOption o
 
         member inline _.Run(f) =
+            LogRiteLogging._logger.LogError(">>> Entering Run(f={F})", f)
             match f () with
             | ValueSome x -> Some x
             | ValueNone -> None

@@ -97,6 +97,7 @@ module CancellableTaskValidationCE =
             let resumptionInfo =
                 { new CancellableTaskResultBuilderBaseResumptionDynamicInfo<'T, 'Error list, _>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
+                        LogRiteLogging._logger.LogError(">>> Entering MoveNext(sm={Sm})", sm)
                         let mutable savedExn = null
 
                         try
@@ -104,11 +105,13 @@ module CancellableTaskValidationCE =
                             let step = info.ResumptionFunc.Invoke(&sm)
 
                             if step then
+                                LogRiteLogging._logger.LogError("MoveNext(sm={Sm}): step → {Step}", sm, step)
                                 // sm.Data.MethodBuilder.SetResult sm.Data.Result
                                 MethodBuilder.SetResult(&sm.Data.MethodBuilder, sm.Data.Result)
                             else
                                 match sm.ResumptionDynamicInfo.ResumptionData with
                                 | :? ICriticalNotifyCompletion as awaiter ->
+                                    LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, awaiter.Message)
                                     let mutable awaiter = awaiter
 
                                     MethodBuilder.AwaitUnsafeOnCompleted(
@@ -119,6 +122,7 @@ module CancellableTaskValidationCE =
                                 | awaiter -> assert not (isNull awaiter)
 
                         with exn ->
+                            LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, exn.Message)
                             savedExn <- exn
                         // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                         match savedExn with
@@ -126,6 +130,7 @@ module CancellableTaskValidationCE =
                         | exn -> MethodBuilder.SetException(&sm.Data.MethodBuilder, exn)
 
                     member _.SetStateMachine(sm, state) =
+                        LogRiteLogging._logger.LogError(">>> Entering SetStateMachine(sm={Sm},state={State})", sm, state)
                         MethodBuilder.SetStateMachine(&sm.Data.MethodBuilder, state)
                 }
 
@@ -196,6 +201,7 @@ module CancellableTaskValidationCE =
 
         /// Specify a Source of CancellationToken -> Task<_> on the real type to allow type inference to work
         member inline this.Source(cancellableTaskValidation: CancellableTaskValidation<_, _>) =
+            LogRiteLogging._logger.LogError(">>> Entering Source(cancellableTaskValidation={CancellableTaskValidation})", cancellableTaskValidation)
             this.Source(fun ct -> Awaitable.GetTaskAwaiter(cancellableTaskValidation ct))
 
 
@@ -308,6 +314,7 @@ module CancellableTaskValidation =
     /// followed by "Tasks Finished".
     /// </example>
     let inline getCancellationToken () =
+        LogRiteLogging._logger.LogError(">>> Entering getCancellationToken()")
         fun (ct: CancellationToken) -> ValueTask<CancellationToken> ct
 
     /// <summary>Lifts an item to a CancellableTask.</summary>
@@ -331,6 +338,7 @@ module CancellableTaskValidation =
 
 
     let inline ofResult (result: Result<'ok, 'error>) : CancellableTaskValidation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(result={Result})", result)
         let x = Result.mapError List.singleton result
         fun _ -> Task.FromResult(x)
 
@@ -342,6 +350,7 @@ module CancellableTaskValidation =
 
 
     let inline ofChoice (choice: Choice<'ok, 'error>) : CancellableTaskValidation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofChoice(choice={Choice})", choice)
         match choice with
         | Choice1Of2 x -> singleton x
         | Choice2Of2 x -> error x
@@ -534,7 +543,9 @@ open IcedTasks
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<AutoOpen>]
 module CTVMergeSourcesExtensionsCT1CT2 =
@@ -752,6 +763,7 @@ module CTVMergeSourcesExtensionsT1T2 =
 
         [<NoEagerConstraintApplication>]
         member inline this.MergeSources(left: 'Awaiter1, right: 'Awaiter2) =
+            LogRiteLogging._logger.LogError(">>> Entering MergeSources(left={Left},right={Right})", left, right)
             this.Source(
                 cancellableTask {
                     let! struct (l1, r1) = cancellableTask.MergeSources(left, right)

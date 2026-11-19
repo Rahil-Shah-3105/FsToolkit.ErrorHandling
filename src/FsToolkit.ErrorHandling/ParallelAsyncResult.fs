@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module ParallelAsyncResult =
 
@@ -13,6 +15,8 @@ module ParallelAsyncResult =
             member this.Value = value
 
         let toBoxedAsync (input: Async<Result<'ok, 'error>>) : Async<ObjNull> =
+            LogRiteLogging._logger.LogError(">>> Entering toBoxedAsync(input={Input})", input)
+            LogRiteLogging._logger.LogWarning("<<< Exiting toBoxedAsync(input={Input})", input)
             async {
                 match! input with
                 | Ok x -> return box x

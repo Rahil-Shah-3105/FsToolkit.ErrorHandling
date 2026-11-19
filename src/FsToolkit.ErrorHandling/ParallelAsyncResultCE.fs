@@ -2,7 +2,9 @@ namespace FsToolkit.ErrorHandling
 
 open System
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module ParallelAsyncResultCE =
 
@@ -13,9 +15,11 @@ module ParallelAsyncResultCE =
             |> async.Return
 
         member inline _.ReturnFrom(input: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> =
+            LogRiteLogging._logger.LogError(">>> Entering ReturnFrom(input={Input})", input)
             input
 
         member inline _.Zero() : Async<Result<unit, 'error>> =
+            LogRiteLogging._logger.LogError(">>> Entering Zero()")
             result.Zero()
             |> async.Return
 
@@ -108,9 +112,11 @@ module ParallelAsyncResultCE =
         /// See https://stackoverflow.com/questions/35286541/why-would-you-use-builder-source-in-a-custom-computation-expression-builder
         /// </summary>
         member inline _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> =
+            LogRiteLogging._logger.LogError(">>> Entering Source(result={Result})", result)
             result
 
         member inline _.MergeSources(input1, input2) : Async<Result<'a * 'b, 'error>> =
+            LogRiteLogging._logger.LogError(">>> Entering MergeSources(input1={Input1},input2={Input2})", input1, input2)
             ParallelAsyncResult.zip input1 input2
 
     let parallelAsyncResult = ParallelAsyncResultBuilder()

@@ -6,7 +6,9 @@
 module FsToolkit.ErrorHandling.Seq
 
 open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// <summary>
 /// Applies a function to each element of a sequence and returns a single result
 /// </summary>
@@ -160,6 +162,7 @@ let inline traverseAsyncResultM'
 /// <returns>An async result with the ok elements in an array or the first error occurring in the sequence</returns>
 /// <remarks>This function is equivalent to <see cref="traverseAsyncResultM'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseAsyncResultM f xs =
+    LogRiteLogging._logger.LogError(">>> Entering traverseAsyncResultM(f={F},xs={Xs})", f, xs)
     traverseAsyncResultM' (async { return Ok Seq.empty }) f xs
 
 /// <summary>
@@ -214,6 +217,7 @@ let inline traverseTaskResultM'
 /// <returns>A task result with the ok elements in an array or the first error occurring in the sequence</returns>
 /// <remarks>This function is equivalent to <see cref="traverseTaskResultM'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseTaskResultM f xs =
+    LogRiteLogging._logger.LogError(">>> Entering traverseTaskResultM(f={F},xs={Xs})", f, xs)
     traverseTaskResultM' (TaskResult.ok Seq.empty) f xs
 
 /// <summary>
@@ -276,6 +280,7 @@ let inline traverseAsyncResultA'
 /// <returns>An async result with the ok elements in an array or an array of all errors occuring in the sequence</returns>
 /// <remarks>This function is equivalent to <see cref="traverseAsyncResultA'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseAsyncResultA f xs =
+    LogRiteLogging._logger.LogError(">>> Entering traverseAsyncResultA(f={F},xs={Xs})", f, xs)
     traverseAsyncResultA' (async { return Ok Seq.empty }) f xs
 
 /// <summary>
@@ -340,6 +345,7 @@ let inline traverseTaskResultA'
 /// <returns>A task result with the ok elements in an array or an array of all errors occuring in the sequence</returns>
 /// <remarks>This function is equivalent to <see cref="traverseTaskResultA'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseTaskResultA f xs =
+    LogRiteLogging._logger.LogError(">>> Entering traverseTaskResultA(f={F},xs={Xs})", f, xs)
     traverseTaskResultA' (TaskResult.ok Seq.empty) f xs
 
 /// <summary>
@@ -439,6 +445,7 @@ let inline traverseAsyncOptionM'
 /// <returns>An async option containing Some array of elements or None if any of the function applications return None</returns>
 /// <remarks>This function is equivalent to <see cref="traverseAsyncOptionM'"/> but applying an initial state of 'Async { return Some Seq.empty }'</remarks>
 let traverseAsyncOptionM f xs =
+    LogRiteLogging._logger.LogError(">>> Entering traverseAsyncOptionM(f={F},xs={Xs})", f, xs)
     traverseAsyncOptionM' (async { return Some Seq.empty }) f xs
 
 /// <summary>
@@ -490,6 +497,7 @@ let inline traverseVOptionM'
 /// <returns>A voption containing Some array of elements or None if any of the function applications return None</returns>
 /// <remarks>This function is equivalent to <see cref="traverseVOptionM'"/> but applying an initial state of 'ValueSome Seq.empty'</remarks>
 let traverseVOptionM f xs =
+    LogRiteLogging._logger.LogError(">>> Entering traverseVOptionM(f={F},xs={Xs})", f, xs)
     traverseVOptionM' (ValueSome Seq.empty) f xs
 
 /// <summary>
@@ -508,15 +516,19 @@ let sequenceVOptionM xs = traverseVOptionM id xs
 /// <param name="input">The input sequence of results.</param>
 /// <returns>A tuple where the first element is an array of all Ok values and the second is an array of all Error values.</returns>
 let partitionResults (input: SeqNull<Result<'ok, 'error>>) : 'ok[] * 'error[] =
+    LogRiteLogging._logger.LogError(">>> Entering partitionResults(input={Input})", input)
     if isNull input then
         nullArg (nameof input)
 
     let oks = ResizeArray()
+    LogRiteLogging._logger.LogError("partitionResults(input={Input}): oks → {Oks}", input, oks)
     let errors = ResizeArray()
+    LogRiteLogging._logger.LogError("partitionResults(input={Input}): errors → {Errors}", input, errors)
 
     for x in input do
         match x with
         | Ok v -> oks.Add v
+        LogRiteLogging._logger.LogWarning("<<< Exiting partitionResults(input={Input})", input)
         | Error e -> errors.Add e
 
     oks.ToArray(), errors.ToArray()

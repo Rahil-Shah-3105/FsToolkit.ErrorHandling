@@ -3,7 +3,9 @@
 open System.Threading.Tasks
 open System
 open Hopac
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module JobResultCE =
 
@@ -14,9 +16,11 @@ module JobResultCE =
             |> job.Return
 
         member inline _.ReturnFrom(jobResult: Job<Result<'T, 'TError>>) : Job<Result<'T, 'TError>> =
+            LogRiteLogging._logger.LogError(">>> Entering ReturnFrom(jobResult={JobResult})", jobResult)
             jobResult
 
         member inline_.Zero() : Job<Result<unit, 'TError>> =
+            LogRiteLogging._logger.LogError(">>> Entering Zero()")
             result.Zero()
             |> job.Return
 
@@ -106,6 +110,7 @@ module JobResultCE =
         member inline _.BindReturn(x: Job<Result<'T, 'U>>, [<InlineIfLambda>] f) = JobResult.map f x
 
         member inline _.MergeSources(t1: Job<Result<'T, 'U>>, t2: Job<Result<'T1, 'U>>) =
+            LogRiteLogging._logger.LogError(">>> Entering MergeSources(t1={T1},t2={T2})", t1, t2)
             JobResult.zip t1 t2
 
         /// <summary>
@@ -138,6 +143,7 @@ module JobResultCEExtensions =
         /// Method lets us transform data types into our internal representation.
         /// </summary>
         member inline _.Source(choice: Choice<_, _>) : Job<Result<_, _>> =
+            LogRiteLogging._logger.LogError(">>> Entering Source(choice={Choice})", choice)
             choice
             |> Result.ofChoice
             |> Job.result

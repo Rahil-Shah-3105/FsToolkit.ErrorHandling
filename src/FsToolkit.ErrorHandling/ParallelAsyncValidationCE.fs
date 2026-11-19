@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module ParallelAsyncValidationCE =
 
@@ -110,6 +112,7 @@ module ParallelAsyncValidationCE =
             /// Method lets us transform data types into our internal representation.
             /// </summary>
             member inline _.Source(s: Result<'ok, 'error>) : AsyncValidation<'ok, 'error> =
+                LogRiteLogging._logger.LogError(">>> Entering Source(s={S})", s)
                 AsyncValidation.ofResult s
 
             /// <summary>

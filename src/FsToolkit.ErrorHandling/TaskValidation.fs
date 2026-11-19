@@ -1,7 +1,9 @@
 ﻿namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// TaskValidation<'a, 'err> is defined as Task<Result<'a, 'err list>> meaning you can use many of the functions found in the Result and Task module.
 type TaskValidation<'ok, 'error> = Task<Result<'ok, 'error list>>
 
@@ -17,10 +19,12 @@ module TaskValidation =
         |> Task.singleton
 
     let inline ofResult (result: Result<'ok, 'error>) : TaskValidation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(result={Result})", result)
         Result.mapError List.singleton result
         |> Task.singleton
 
     let inline ofChoice (choice: Choice<'ok, 'error>) : TaskValidation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofChoice(choice={Choice})", choice)
         match choice with
         | Choice1Of2 x -> ok x
         | Choice2Of2 e -> error e

@@ -11,7 +11,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open System.Collections.Generic
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<Struct; NoComparison; NoEquality>]
 type TaskValidationStateMachineData<'T, 'Error> =
 
@@ -49,11 +51,14 @@ type TaskValidationBuilderBase() =
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     [<DefaultValue>]
     member inline _.Zero<'TOverall, 'Error>() : TaskValidationCode<'TOverall, 'Error, unit> =
+        LogRiteLogging._logger.LogError(">>> Entering Zero()")
         ResumableCode.Zero()
 
     member inline _.Return(value: 'T) : TaskValidationCode<'T, 'Error, 'T> =
         TaskValidationCode<'T, 'Error, _>(fun sm ->
+            LogRiteLogging._logger.LogError(">>> Entering Return(value={Value})", value)
             sm.Data.Validation <- Ok value
+            LogRiteLogging._logger.LogWarning("<<< Exiting Return(value={Value})", value)
             true
         )
 
@@ -298,6 +303,7 @@ type TaskValidationBuilder() =
         let resumptionInfo =
             { new TaskValidationResumptionDynamicInfo<_, _>(initialResumptionFunc) with
                 member info.MoveNext(sm) =
+                    LogRiteLogging._logger.LogError(">>> Entering MoveNext(sm={Sm})", sm)
                     let mutable savedExn = null
 
                     try
@@ -306,16 +312,19 @@ type TaskValidationBuilder() =
 
                         // If the `sm.Data.MethodBuilder` has already been set somewhere else (like While/WhileDynamic), we shouldn't continue
                         if sm.Data.IsTaskCompleted then
+                            LogRiteLogging._logger.LogError("MoveNext(sm={Sm}): step → {Step}", sm, step)
                             ()
                         elif step then
                             sm.Data.MethodBuilder.SetResult(sm.Data.Validation)
                         else
                             match sm.ResumptionDynamicInfo.ResumptionData with
                             | :? ICriticalNotifyCompletion as awaiter ->
+                                LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, awaiter.Message)
                                 let mutable awaiter = awaiter
                                 sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                             | awaiter -> assert not (isNull awaiter)
                     with exn ->
+                        LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, exn.Message)
                         savedExn <- exn
                     // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                     match savedExn with
@@ -323,6 +332,7 @@ type TaskValidationBuilder() =
                     | exn -> sm.Data.MethodBuilder.SetException exn
 
                 member _.SetStateMachine(sm, state) =
+                    LogRiteLogging._logger.LogError(">>> Entering SetStateMachine(sm={Sm},state={State})", sm, state)
                     sm.Data.MethodBuilder.SetStateMachine(state)
             }
 
@@ -419,10 +429,13 @@ type BackgroundTaskValidationBuilder() =
                             AsyncTaskValidationMethodBuilder<'T, 'Error>.Create()
 
                         sm.Data.MethodBuilder.Start(&sm)
+                        LogRiteLogging._logger.LogWarning("<<< Exiting Run(code={Code})", code)
                         sm.Data.MethodBuilder.Task
                     else
                         let sm = sm // copy contents of state machine so we can capture it
+                        LogRiteLogging._logger.LogError("Run(code={Code}): __stack_code_fin → {__stack_code_fin}", code, __stack_code_fin)
 
+                        LogRiteLogging._logger.LogError("Exception in Run(code={Code}): {Arg1}", code, exn.Message)
                         Task.Run<Validation<'T, 'Error>>(fun () ->
                             let mutable sm = sm // host local mutable copy of contents of state machine on this thread pool thread
 
@@ -432,6 +445,7 @@ type BackgroundTaskValidationBuilder() =
                             sm.Data.MethodBuilder.Start(&sm)
                             sm.Data.MethodBuilder.Task
                         )
+                            LogRiteLogging._logger.LogError(">>> Entering Run(code={Code})", code)
                 ))
         else
             BackgroundTaskValidationBuilder.RunDynamic(code)
@@ -603,6 +617,7 @@ module TaskValidationCEExtensionsHighPriority =
             this.Bind(task.GetAwaiter(), (fun v -> this.Return v))
 
         member inline this.BindReturn(x: TaskValidation<'T, 'Error>, f) =
+            LogRiteLogging._logger.LogError(">>> Entering BindReturn(x={X},f={F})", x, f)
             this.Bind(x.GetAwaiter(), (fun x -> this.Return(f x)))
 
         member inline _.MergeSources
@@ -635,6 +650,7 @@ module TaskValidationCEExtensionsMediumPriority =
             |> Async.StartImmediateAsTask
 
         member inline _.Source(s: Async<Result<'ok, 'error>>) : TaskValidation<'ok, 'error> =
+            LogRiteLogging._logger.LogError(">>> Entering Source(s={S})", s)
             s
             |> AsyncResult.mapError List.singleton
             |> Async.StartImmediateAsTask

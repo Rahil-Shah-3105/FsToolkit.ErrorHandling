@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 [<RequireQualifiedAccess>]
 module TaskValueOption =
@@ -9,10 +11,12 @@ module TaskValueOption =
     let inline map ([<InlineIfLambda>] f) ar = Task.map (ValueOption.map f) ar
 
     let inline bind ([<InlineIfLambda>] f) (ar: Task<_>) =
+        LogRiteLogging._logger.LogError(">>> Entering bind()")
         task {
             let! opt = ar
 
             let t =
+                LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
                 match opt with
                 | ValueSome x -> f x
                 | ValueNone -> Task.singleton ValueNone
@@ -23,9 +27,12 @@ module TaskValueOption =
     let inline valueSome x = Task.singleton (ValueSome x)
 
     let inline apply f x =
+        LogRiteLogging._logger.LogError(">>> Entering apply(f={F},x={X})", f, x)
         bind (fun f' -> bind (fun x' -> valueSome (f' x')) x) f
 
     let inline zip x1 x2 =
+        LogRiteLogging._logger.LogError(">>> Entering zip(x1={X1},x2={X2})", x1, x2)
+        LogRiteLogging._logger.LogWarning("<<< Exiting zip(x1={X1},x2={X2})", x1, x2)
         Task.zip x1 x2
         |> Task.map (fun (r1, r2) -> ValueOption.zip r1 r2)
 
@@ -60,6 +67,8 @@ module TaskValueOption =
     /// The option if the option is <c>Some</c>, else the default value.
     /// </returns>
     let inline defaultValue (value: 'value) (taskValueOption: Task<'value voption>) =
+        LogRiteLogging._logger.LogError(">>> Entering defaultValue(value={Value})", value)
+        LogRiteLogging._logger.LogWarning("<<< Exiting defaultValue(value={Value})", value)
         taskValueOption
         |> Task.map (ValueOption.defaultValue value)
 

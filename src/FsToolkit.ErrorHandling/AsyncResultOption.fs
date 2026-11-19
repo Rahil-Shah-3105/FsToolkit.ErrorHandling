@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 type AsyncResultOption<'ok, 'error> = Async<Result<'ok option, 'error>>
 
@@ -25,10 +27,14 @@ module AsyncResultOption =
             input
 
     let inline ok x =
+        LogRiteLogging._logger.LogError(">>> Entering ok(x={X})", x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ok(x={X})", x)
         Ok(Some x)
         |> Async.singleton
 
     let inline error x : Async<Result<'ok option, 'error>> =
+        LogRiteLogging._logger.LogError(">>> Entering error(x={X})", x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting error(x={X})", x)
         Error x
         |> Async.singleton
 
@@ -74,14 +80,17 @@ module AsyncResultOption =
 
 
     let inline ofAsyncResult (r: Async<Result<'ok, 'error>>) =
+        LogRiteLogging._logger.LogError(">>> Entering ofAsyncResult(r={R})", r)
         r
         |> AsyncResult.map Some
 
     let inline ofOption (r: 'ok option) =
+        LogRiteLogging._logger.LogError(">>> Entering ofOption(r={R})", r)
         r
         |> Ok
         |> Async.singleton
 
     let inline ofAsyncOption (r: Async<'ok option>) =
+        LogRiteLogging._logger.LogError(">>> Entering ofAsyncOption(r={R})", r)
         r
         |> Async.map Ok

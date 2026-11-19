@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// Contains methods to build Tasks using the F# computation expression syntax
 [<AutoOpen>]
@@ -39,6 +41,7 @@ module CancellableTaskResultBuilderBase =
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
         /// <exception cref="T:System.ObjectDisposedException">The associated <see cref="T:System.Threading.CancellationTokenSource" /> has been disposed.</exception>
         member inline this.ThrowIfCancellationRequested() =
+            LogRiteLogging._logger.LogError(">>> Entering ThrowIfCancellationRequested()")
             this.CancellationToken.ThrowIfCancellationRequested()
 
     /// This is used by the compiler as a template for creating state machine structs
@@ -1107,6 +1110,7 @@ module CancellableTaskResultBuilderBase =
             ///
             /// <returns>CancellationToken -> 'Awaiter</returns>
             member inline this.Source(computation: Async<'T>) =
+                LogRiteLogging._logger.LogError(">>> Entering Source(computation={Computation})", computation)
                 this.Source(Async.AsCancellableTask(computation))
 
 

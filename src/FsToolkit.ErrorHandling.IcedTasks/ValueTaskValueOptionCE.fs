@@ -11,7 +11,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open IcedTasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// ValueTask<'T voption>
 type ValueTaskValueOption<'T> = ValueTask<'T voption>
 
@@ -25,12 +27,16 @@ type ValueTaskValueOptionStateMachineData<'T> =
     val mutable MethodBuilder: AsyncValueTaskValueOptionMethodBuilder<'T>
 
     member this.IsResultNone =
+        LogRiteLogging._logger.LogError(">>> Entering IsResultNone()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting IsResultNone()")
         match this.Result with
         | ValueNone -> false
         | ValueSome(ValueNone) -> true
         | ValueSome _ -> false
 
     member this.SetResult() =
+        LogRiteLogging._logger.LogError(">>> Entering SetResult()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SetResult()")
         match this.Result with
         | ValueNone -> this.MethodBuilder.SetResult ValueNone
         | ValueSome x -> this.MethodBuilder.SetResult x
@@ -62,14 +68,18 @@ type ValueTaskValueOptionBuilderBase() =
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     [<DefaultValue>]
     member inline _.Zero<'TOverall>() : ValueTaskValueOptionCode<'TOverall, unit> =
+        LogRiteLogging._logger.LogError(">>> Entering Zero()")
         ValueTaskValueOptionCode<_, _>(fun sm ->
+            LogRiteLogging._logger.LogWarning("<<< Exiting Zero()")
             sm.Data.Result <- ValueSome(ValueSome Unchecked.defaultof<'TOverall>)
             true
         )
 
     member inline _.Return(value: 'T) : ValueTaskValueOptionCode<'T, 'T> =
         ValueTaskValueOptionCode<'T, _>(fun sm ->
+            LogRiteLogging._logger.LogError(">>> Entering Return(value={Value})", value)
             sm.Data.Result <- ValueSome(ValueSome value)
+            LogRiteLogging._logger.LogWarning("<<< Exiting Return(value={Value})", value)
             true
         )
 
@@ -234,6 +244,7 @@ type ValueTaskValueOptionBuilder() =
         let resumptionInfo =
             { new ValueTaskValueOptionResumptionDynamicInfo<_>(initialResumptionFunc) with
                 member info.MoveNext(sm) =
+                    LogRiteLogging._logger.LogError(">>> Entering MoveNext(sm={Sm})", sm)
                     let mutable savedExn = null
 
                     try
@@ -242,17 +253,20 @@ type ValueTaskValueOptionBuilder() =
 
                         // If the `sm.Data.MethodBuilder` has already been set somewhere else (like While/WhileDynamic), we shouldn't continue
                         if sm.Data.IsTaskCompleted then
+                            LogRiteLogging._logger.LogError("MoveNext(sm={Sm}): step → {Step}", sm, step)
                             ()
                         elif step then
                             sm.Data.SetResult()
                         else
                             match sm.ResumptionDynamicInfo.ResumptionData with
                             | :? ICriticalNotifyCompletion as awaiter ->
+                                LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, awaiter.Message)
                                 let mutable awaiter = awaiter
                                 sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                             | awaiter -> assert not (isNull awaiter)
 
                     with exn ->
+                        LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, exn.Message)
                         savedExn <- exn
                     // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                     match savedExn with
@@ -260,6 +274,7 @@ type ValueTaskValueOptionBuilder() =
                     | exn -> sm.Data.MethodBuilder.SetException exn
 
                 member _.SetStateMachine(sm, state) =
+                    LogRiteLogging._logger.LogError(">>> Entering SetStateMachine(sm={Sm},state={State})", sm, state)
                     sm.Data.MethodBuilder.SetStateMachine(state)
             }
 
@@ -269,7 +284,9 @@ type ValueTaskValueOptionBuilder() =
         sm.Data.MethodBuilder.Task
 
     member inline _.Run(code: ValueTaskValueOptionCode<'T, 'T>) : ValueTaskValueOption<'T> =
+        LogRiteLogging._logger.LogError(">>> Entering Run(code={Code})", code)
         if __useResumableCode then
+            LogRiteLogging._logger.LogWarning("<<< Exiting Run(code={Code})", code)
             __stateMachine<ValueTaskValueOptionStateMachineData<'T>, ValueTaskValueOption<'T>>
                 (MoveNextMethodImpl<_>(fun sm ->
                     //-- RESUMABLE CODE START
@@ -278,6 +295,7 @@ type ValueTaskValueOptionBuilder() =
 
                     try
                         let __stack_code_fin = code.Invoke(&sm)
+                        LogRiteLogging._logger.LogError("Run(code={Code}): __stack_code_fin → {__stack_code_fin}", code, __stack_code_fin)
 
                         if
                             __stack_code_fin
@@ -285,6 +303,7 @@ type ValueTaskValueOptionBuilder() =
                         then
                             sm.Data.SetResult()
                     with exn ->
+                        LogRiteLogging._logger.LogError("Exception in Run(code={Code}): {Arg1}", code, exn.Message)
                         __stack_exn <- exn
                     // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                     match __stack_exn with
@@ -513,9 +532,11 @@ module ValueTaskValueOptionCEExtensionsHighPriority =
             )
 
         member inline this.BindReturn(x: ValueTaskValueOption<'T>, [<InlineIfLambda>] f) =
+            LogRiteLogging._logger.LogError(">>> Entering BindReturn(x={X})", x)
             this.Bind(x, (fun x -> this.Return(f x)))
 
         member inline _.MergeSources(t1: ValueTaskValueOption<'T>, t2: ValueTaskValueOption<'T1>) =
+            LogRiteLogging._logger.LogError(">>> Entering MergeSources(t1={T1},t2={T2})", t1, t2)
             ValueTaskValueOption.zip t1 t2
 
         member inline this.ReturnFrom

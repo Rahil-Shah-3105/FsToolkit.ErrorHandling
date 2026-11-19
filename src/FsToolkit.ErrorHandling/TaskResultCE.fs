@@ -15,7 +15,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Collections
 open System.Collections.Generic
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// Task<Result<'T, 'Error>>
 type TaskResult<'T, 'Error> = Task<Result<'T, 'Error>>
 
@@ -56,11 +58,14 @@ type TaskResultBuilderBase() =
     /// Used to represent no-ops like the implicit empty "else" branch of an "if" expression.
     [<DefaultValue>]
     member inline _.Zero<'TOverall, 'Error>() : TaskResultCode<'TOverall, 'Error, unit> =
+        LogRiteLogging._logger.LogError(">>> Entering Zero()")
         ResumableCode.Zero()
 
     member inline _.Return(value: 'T) : TaskResultCode<'T, 'Error, 'T> =
         TaskResultCode<'T, 'Error, _>(fun sm ->
+            LogRiteLogging._logger.LogError(">>> Entering Return(value={Value})", value)
             // printfn "Return Called --> "
+            LogRiteLogging._logger.LogWarning("<<< Exiting Return(value={Value})", value)
             sm.Data.Result <- Ok value
             true
         )
@@ -278,6 +283,7 @@ type TaskResultBuilderBase() =
         )
 
     member inline this.Source(taskResult: TaskResult<'T, 'Error>) : TaskResult<'T, 'Error> =
+        LogRiteLogging._logger.LogError(">>> Entering Source(taskResult={TaskResult})", taskResult)
         taskResult
 
 
@@ -300,6 +306,7 @@ type TaskResultBuilder() =
         let resumptionInfo =
             { new TaskResultResumptionDynamicInfo<_, _>(initialResumptionFunc) with
                 member info.MoveNext(sm) =
+                    LogRiteLogging._logger.LogError(">>> Entering MoveNext(sm={Sm})", sm)
                     let mutable savedExn = null
 
                     try
@@ -317,11 +324,13 @@ type TaskResultBuilder() =
                         else
                             match sm.ResumptionDynamicInfo.ResumptionData with
                             | :? ICriticalNotifyCompletion as awaiter ->
+                                LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, awaiter.Message)
                                 let mutable awaiter = awaiter
                                 sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                             | awaiter -> assert not (isNull awaiter)
 
                     with exn ->
+                        LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, exn.Message)
                         savedExn <- exn
                     // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                     match savedExn with
@@ -329,6 +338,7 @@ type TaskResultBuilder() =
                     | exn -> sm.Data.MethodBuilder.SetException exn
 
                 member _.SetStateMachine(sm, state) =
+                    LogRiteLogging._logger.LogError(">>> Entering SetStateMachine(sm={Sm},state={State})", sm, state)
                     sm.Data.MethodBuilder.SetStateMachine(state)
             }
 
@@ -425,10 +435,13 @@ type BackgroundTaskResultBuilder() =
                     then
                         sm.Data.MethodBuilder <- AsyncTaskResultMethodBuilder<'T, 'Error>.Create()
                         sm.Data.MethodBuilder.Start(&sm)
+                        LogRiteLogging._logger.LogWarning("<<< Exiting Run(code={Code})", code)
                         sm.Data.MethodBuilder.Task
                     else
                         let sm = sm // copy contents of state machine so we can capture it
+                        LogRiteLogging._logger.LogError("Run(code={Code}): __stack_code_fin → {__stack_code_fin}", code, __stack_code_fin)
 
+                        LogRiteLogging._logger.LogError("Exception in Run(code={Code}): {Arg1}", code, exn.Message)
                         Task.Run<Result<'T, 'Error>>(fun () ->
                             let mutable sm = sm // host local mutable copy of contents of state machine on this thread pool thread
 
@@ -438,6 +451,7 @@ type BackgroundTaskResultBuilder() =
                             sm.Data.MethodBuilder.Start(&sm)
                             sm.Data.MethodBuilder.Task
                         )
+                            LogRiteLogging._logger.LogError(">>> Entering Run(code={Code})", code)
                 ))
         else
             BackgroundTaskResultBuilder.RunDynamic(code)
@@ -622,9 +636,11 @@ module TaskResultCEExtensionsHighPriority =
             this.Bind(task.GetAwaiter(), (fun v -> this.Return v))
 
         member inline this.BindReturn(x: TaskResult<'T, 'Error>, f) =
+            LogRiteLogging._logger.LogError(">>> Entering BindReturn(x={X},f={F})", x, f)
             this.Bind(x.GetAwaiter(), (fun x -> this.Return(f x)))
 
         member inline _.MergeSources(t1: TaskResult<'T, 'Error>, t2: TaskResult<'T1, 'Error>) =
+            LogRiteLogging._logger.LogError(">>> Entering MergeSources(t1={T1},t2={T2})", t1, t2)
             TaskResult.zip t1 t2
 
         member inline _.Source(s: #seq<_>) = s

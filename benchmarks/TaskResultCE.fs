@@ -5,7 +5,9 @@ open BenchmarkDotNet
 open BenchmarkDotNet.Attributes
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 module TaskResultCE =
 
     type TaskResultCEInlinedLambdaBuilder() =
@@ -18,6 +20,7 @@ module TaskResultCE =
             asyncResult
 
         member _.Zero() : TaskCode<Result<unit, 'TError>, _> =
+            LogRiteLogging._logger.LogError(">>> Entering Zero()")
             task.Return
             <| Ok()
 
@@ -27,9 +30,11 @@ module TaskResultCE =
                 [<InlineIfLambda>] binder: 'T -> TaskCode<Result<'U, 'TError>, _>
             ) : TaskCode<Result<'U, 'TError>, _> =
             let inline binder' r =
+                LogRiteLogging._logger.LogError(">>> Entering binder(r={R})", r)
                 match r with
                 | Ok x -> binder x
                 | Error x ->
+                    LogRiteLogging._logger.LogWarning("<<< Exiting binder(r={R})", r)
                     task.Return
                     <| Error x
 
@@ -78,15 +83,19 @@ module TaskResultCEExtensions =
         member inline _.Source(result: Result<_, _>) : Task<Result<_, _>> = Task.FromResult result
 
     let rec fib n =
+        LogRiteLogging._logger.LogError(">>> Entering fib(n={N})", n)
         if n < 2L then
+            LogRiteLogging._logger.LogWarning("<<< Exiting fib(n={N})", n)
             n
         else
             fib (n - 1L)
             + fib (n - 2L)
 
     let rec afib (n, level) =
+        LogRiteLogging._logger.LogError(">>> Entering afib(n={N},level={Level})", n, level)
         task {
             if n < 0L then
+                LogRiteLogging._logger.LogWarning("<<< Exiting afib(n={N},level={Level})", n, level)
                 return Error "No"
             elif n < 2L then
                 return Ok n
@@ -113,6 +122,7 @@ module TaskResultCEExtensions =
 
         [<Benchmark>]
         member this.Result_Normal_Bind_CE() =
+            LogRiteLogging._logger.LogError(">>> Entering Result_Normal_Bind_CE()")
             let action () =
                 taskResult {
                     let! a = Ok 10
@@ -126,7 +136,9 @@ module TaskResultCEExtensions =
 
         [<Benchmark>]
         member this.Result_Alt_Inlined_Bind_CE() =
+            LogRiteLogging._logger.LogError(">>> Entering Result_Alt_Inlined_Bind_CE()")
             let action () =
+                LogRiteLogging._logger.LogError(">>> Entering action()")
                 taskResultInlinedIfLambda {
                     let! a = Ok 10
                     let! b = Ok 5

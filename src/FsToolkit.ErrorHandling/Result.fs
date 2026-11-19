@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// <summary>
 /// Helper functions for working with <c>Result</c> values.
@@ -66,6 +68,8 @@ module Result =
     /// <param name="value">The result to check.</param>
     /// <returns>True if the result is in a successful state; otherwise, false.</returns>
     let inline isOk (value: Result<'ok, 'error>) : bool =
+        LogRiteLogging._logger.LogError(">>> Entering isOk(value={Value})", value)
+        LogRiteLogging._logger.LogWarning("<<< Exiting isOk(value={Value})", value)
         match value with
         | Ok _ -> true
         | Error _ -> false
@@ -78,6 +82,8 @@ module Result =
     /// <param name="value">The result to check.</param>
     /// <returns>True if the result is an error; otherwise, false.</returns>
     let inline isError (value: Result<'ok, 'error>) : bool =
+        LogRiteLogging._logger.LogError(">>> Entering isError(value={Value})", value)
+        LogRiteLogging._logger.LogWarning("<<< Exiting isError(value={Value})", value)
         match value with
         | Ok _ -> false
         | Error _ -> true
@@ -184,6 +190,8 @@ module Result =
     /// <param name="input">The <c>Choice</c> value to convert.</param>
     /// <returns>A <c>Result</c> matching the types of the input <c>Choice</c></returns>
     let inline ofChoice (input: Choice<'ok, 'error>) : Result<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofChoice(input={Input})", input)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ofChoice(input={Input})", input)
         match input with
         | Choice1Of2 x -> Ok x
         | Choice2Of2 e -> Error e
@@ -198,6 +206,8 @@ module Result =
     /// <returns>A <c>Result</c> containing the value or an error tuple of the field name and the original error type</returns>
     let inline tryCreate (fieldName: string) (x: 'a) : Result< ^b, (string * 'c) > =
         let tryCreate' x =
+            LogRiteLogging._logger.LogError(">>> Entering tryCreate(fieldName={FieldName})", fieldName)
+            LogRiteLogging._logger.LogError(">>> Entering tryCreate(x={X})", x)
             (^b: (static member TryCreate: 'a -> Result< ^b, 'c >) x)
 
         tryCreate' x
@@ -268,6 +278,8 @@ module Result =
     /// <param name="result">The <c>Result</c> to ignore.</param>
     /// <returns>A new <c>Result</c> with unit as the success value.</returns>
     let inline ignore<'ok, 'error> (result: Result<'ok, 'error>) : Result<unit, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ignore(result={Result})", result)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ignore(result={Result})", result)
         match result with
         | Ok _ -> Ok()
         | Error e -> Error e
@@ -303,6 +315,7 @@ module Result =
     /// <param name="option">The <c>Option</c> value to check.</param>
     /// <returns>An <c>Ok</c> result if the value is <c>Some</c>, otherwise an Error result with the specified error value.</returns>
     let inline requireSome (error: 'error) (option: 'ok option) : Result<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireSome(error={Error})", error)
         match option with
         | Some x -> Ok x
         | None -> Error error
@@ -330,6 +343,7 @@ module Result =
     /// <param name="option">The <c>Option</c> value to check.</param>
     /// <returns>An <c>Ok</c> result if the value is <c>None</c>, otherwise an Error result with the specified error value.</returns>
     let inline requireNone (error: 'error) (option: 'value option) : Result<unit, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireNone(error={Error})", error)
         match option with
         | Some _ -> Error error
         | None -> Ok()
@@ -357,6 +371,7 @@ module Result =
     /// <param name="voption">The <c>ValueOption</c> value to check.</param>
     /// <returns>An <c>Ok</c> result if the value is <c>ValueSome</c>, otherwise an <c>Error</c> result with the specified error value.</returns>
     let inline requireValueSome (error: 'error) (voption: 'ok voption) : Result<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireValueSome(error={Error})", error)
         match voption with
         | ValueSome x -> Ok x
         | ValueNone -> Error error
@@ -370,6 +385,7 @@ module Result =
     /// <param name="voption">The <c>ValueOption</c> value to check.</param>
     /// <returns>An <c>Ok</c> result if the value is <c>ValueNone</c>, otherwise an <c>Error</c> result with the specified error value.</returns>
     let inline requireValueNone (error: 'error) (voption: 'value voption) : Result<unit, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireValueNone(error={Error})", error)
         match voption with
         | ValueSome _ -> Error error
         | ValueNone -> Ok()
@@ -383,6 +399,7 @@ module Result =
     /// <param name="value">The nullable value to check.</param>
     /// <returns>An <c>Ok</c> result if the value is not null, otherwise an <c>Error</c> result with the specified error value.</returns>
     let inline requireNotNull (error: 'error) (value: 'ok) : Result<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireNotNull(error={Error})", error)
         match value with
         | null -> Error error
         | nonnull -> Ok nonnull
@@ -426,6 +443,7 @@ module Result =
     /// <param name="xs">The sequence to check.</param>
     /// <returns>An <c>Ok</c> result if the sequence is empty, otherwise an <c>Error</c> result with the specified error value.</returns>
     let inline requireEmpty (error: 'error) (xs: #seq<'value>) : Result<unit, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireEmpty(error={Error})", error)
         if Seq.isEmpty xs then Ok() else Error error
 
     /// <summary>
@@ -437,6 +455,7 @@ module Result =
     /// <param name="xs">The sequence to check.</param>
     /// <returns>An <c>Ok</c> result if the sequence is not empty, otherwise an <c>Error</c> result with the specified error value.</returns>
     let inline requireNotEmpty (error: 'error) (xs: #seq<'value>) : Result<unit, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireNotEmpty(error={Error})", error)
         if Seq.isEmpty xs then Error error else Ok()
 
     /// <summary>
@@ -448,6 +467,7 @@ module Result =
     /// <param name="xs">The sequence to check.</param>
     /// <returns>An <c>Ok</c> result containing the first item of the sequence if it exists, otherwise an <c>Error</c> result with the specified error value.</returns>
     let inline requireHead (error: 'error) (xs: #seq<'ok>) : Result<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering requireHead(error={Error})", error)
         match Seq.tryHead xs with
         | Some x -> Ok x
         | None -> Error error
@@ -496,6 +516,7 @@ module Result =
     /// <param name="result">The input result.</param>
     /// <returns>A new <c>Result</c> with the same Ok value and the new error value.</returns>
     let inline withError (error: 'error) (result: Result<'ok, unit>) : Result<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering withError(error={Error})", error)
         result
         |> mapError (fun () -> error)
 
@@ -626,9 +647,11 @@ module Result =
 
     /// Converts a Result<Async<_>,_> to an Async<Result<_,_>>
     let inline sequenceAsync (resAsync: Result<Async<'ok>, 'error>) : Async<Result<'ok, 'error>> =
+        LogRiteLogging._logger.LogError(">>> Entering sequenceAsync(resAsync={ResAsync})", resAsync)
         async {
             match resAsync with
             | Ok asnc ->
+                LogRiteLogging._logger.LogWarning("<<< Exiting sequenceAsync(resAsync={ResAsync})", resAsync)
                 let! x = asnc
                 return Ok x
             | Error err -> return Error err
@@ -654,6 +677,8 @@ module Result =
         task {
             match resTask with
             | Ok task ->
+                LogRiteLogging._logger.LogError(">>> Entering sequenceTask(resTask={ResTask})", resTask)
+                LogRiteLogging._logger.LogWarning("<<< Exiting sequenceTask(resTask={ResTask})", resTask)
                 let! x = task
                 return Ok x
             | Error err -> return Error err

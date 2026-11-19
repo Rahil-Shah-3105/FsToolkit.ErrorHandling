@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// <summary>
 /// Helper functions for working with <c>Result</c> values that contain <c>Option</c> values.
 /// </summary>
@@ -170,6 +172,8 @@ module ResultOption =
     /// <param name="resultOpt">The <c>Result</c> value to ignore the value of.</param>
     /// <returns>The <c>Result</c> value with the value replaced with an <c>Option</c> unit.</returns>
     let inline ignore<'ok, 'error> (resultOpt: Result<'ok option, 'error>) =
+        LogRiteLogging._logger.LogError(">>> Entering ignore(resultOpt={ResultOpt})", resultOpt)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ignore(resultOpt={ResultOpt})", resultOpt)
         resultOpt
         |> map ignore<'ok>
 
@@ -179,6 +183,8 @@ module ResultOption =
     /// <param name="result">The <c>Result</c> to convert.</param>
     /// <returns>The <c>Result</c> with the value wrapped in an <c>Option</c>.</returns>
     let inline ofResult (result: Result<'ok, 'error>) : Result<'ok option, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(result={Result})", result)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ofResult(result={Result})", result)
         match result with
         | Ok x -> Ok(Some x)
         | Error e -> Error e
@@ -196,6 +202,7 @@ module ResultOption =
     /// <param name="choice">The <c>Choice</c> to convert.</param>
     /// <returns>The <c>Result</c> with the value wrapped in an <c>Option</c>.</returns>
     let inline ofChoice (choice: Choice<'ok, 'error>) : Result<'ok option, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofChoice(choice={Choice})", choice)
         match choice with
         | Choice1Of2 x -> Ok(Some x)
         | Choice2Of2 e -> Error e

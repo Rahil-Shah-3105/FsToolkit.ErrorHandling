@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Diagnostics
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// Contains methods to build Tasks using the F# computation expression syntax
 [<AutoOpen>]
@@ -36,12 +38,16 @@ module CancellableTaskOptionBuilderBase =
         val mutable MethodBuilder: AsyncTaskOptionMethodBuilder<'T>
 
         member inline this.IsResultNone =
+            LogRiteLogging._logger.LogError(">>> Entering IsResultNone()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting IsResultNone()")
             match this.Result with
             | ValueNone -> false
             | ValueSome(None) -> true
             | ValueSome _ -> false
 
         member inline this.SetResult() =
+            LogRiteLogging._logger.LogError(">>> Entering SetResult()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting SetResult()")
             match this.Result with
             | ValueNone -> this.MethodBuilder.SetResult None
             | ValueSome x -> this.MethodBuilder.SetResult x
@@ -50,6 +56,7 @@ module CancellableTaskOptionBuilderBase =
         /// <exception cref="T:System.OperationCanceledException">The token has had cancellation requested.</exception>
         /// <exception cref="T:System.ObjectDisposedException">The associated <see cref="T:System.Threading.CancellationTokenSource" /> has been disposed.</exception>
         member inline this.ThrowIfCancellationRequested() =
+            LogRiteLogging._logger.LogError(">>> Entering ThrowIfCancellationRequested()")
             this.CancellationToken.ThrowIfCancellationRequested()
 
     and AsyncTaskOptionMethodBuilder<'TOverall> = AsyncTaskMethodBuilder<'TOverall option>
@@ -91,7 +98,9 @@ module CancellableTaskOptionBuilderBase =
         /// <returns>A CancellableTasks that returns ().</returns>
         [<DefaultValue>]
         member inline _.Zero() : CancellableTaskOptionBuilderBaseCode<'TOverall, unit> =
+            LogRiteLogging._logger.LogError(">>> Entering Zero()")
             CancellableTaskOptionBuilderBaseCode<_, _>(fun sm ->
+                LogRiteLogging._logger.LogWarning("<<< Exiting Zero()")
                 sm.Data.Result <- ValueSome(Some Unchecked.defaultof<'TOverall>)
                 true
             )
@@ -108,7 +117,9 @@ module CancellableTaskOptionBuilderBase =
         /// <returns>A cancellableTasks that returns value when executed.</returns>
         member inline _.Return(value: 'T) : CancellableTaskOptionBuilderBaseCode<'T, 'T> =
             CancellableTaskOptionBuilderBaseCode<'T, 'T>(fun sm ->
+                LogRiteLogging._logger.LogError(">>> Entering Return(value={Value})", value)
                 sm.Data.Result <- ValueSome(Some value)
+                LogRiteLogging._logger.LogWarning("<<< Exiting Return(value={Value})", value)
                 true
             )
 
@@ -1031,6 +1042,7 @@ module CancellableTaskOptionBuilderBase =
             ///
             /// <returns>CancellationToken -> 'Awaiter</returns>
             member inline this.Source(computation: Async<'T>) =
+                LogRiteLogging._logger.LogError(">>> Entering Source(computation={Computation})", computation)
                 this.Source(Async.AsCancellableTask(computation))
 
 

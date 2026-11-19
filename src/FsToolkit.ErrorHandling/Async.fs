@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// <summary>
 /// Helper functions for working with the <c>Async</c> type.
 /// </summary>
@@ -112,6 +114,7 @@ module Async =
     /// <param name="right">The second async value.</param>
     /// <returns>The tuple of the pair.</returns>
     let inline zip (left: Async<'left>) (right: Async<'right>) : Async<'left * 'right> =
+        LogRiteLogging._logger.LogError(">>> Entering zip(left={Left})", left)
         bind (fun l -> bind (fun r -> singleton (l, r)) right) left
 
     /// <summary>
@@ -251,12 +254,14 @@ module AsyncExt =
         static member TryFinallyAsync(comp: Async<'T>, deferred) : Async<'T> =
 
             let finish (compResult, deferredResult) (cont, (econt: exn -> unit), ccont) =
+                LogRiteLogging._logger.LogError(">>> Entering finish(compResult={CompResult},ccont={Ccont})", compResult, ccont)
                 match (compResult, deferredResult) with
                 | (Choice1Of3 x, Choice1Of3()) -> cont x
                 | (Choice2Of3 compExn, Choice1Of3()) -> econt compExn
                 | (Choice3Of3 compExn, Choice1Of3()) -> ccont compExn
                 | (Choice1Of3 _, Choice2Of3 deferredExn) -> econt deferredExn
                 | (Choice2Of3 compExn, Choice2Of3 deferredExn) ->
+                    LogRiteLogging._logger.LogWarning("<<< Exiting finish(compResult={CompResult},ccont={Ccont})", compResult, ccont)
                     econt
                     <| new AggregateException(compExn, deferredExn)
                 | (Choice3Of3 compExn, Choice2Of3 deferredExn) -> econt deferredExn
@@ -265,6 +270,7 @@ module AsyncExt =
                     <| new Exception("Unexpected cancellation.", deferredExn)
 
             let startDeferred compResult (cont, econt, ccont) =
+                LogRiteLogging._logger.LogError(">>> Entering startDeferred(compResult={CompResult})", compResult)
                 Async.StartWithContinuations(
                     deferred,
                     (fun () -> finish (compResult, Choice1Of3()) (cont, econt, ccont)),
@@ -273,6 +279,7 @@ module AsyncExt =
                 )
 
             let startComp ct (cont, econt, ccont) =
+                LogRiteLogging._logger.LogError(">>> Entering startComp(ct={Ct})", ct)
                 Async.StartWithContinuations(
                     comp,
                     (fun x -> startDeferred (Choice1Of3(x)) (cont, econt, ccont)),

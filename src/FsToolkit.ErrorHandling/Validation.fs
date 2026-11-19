@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// Validation<'a, 'err> is defined as Result<'a, 'err list> meaning you can use many of the functions found in the Result module.
 type Validation<'ok, 'error> = Result<'ok, 'error list>
 
@@ -10,9 +12,11 @@ module Validation =
     let inline error (error: 'error) : Validation<'ok, 'error> = Error [ error ]
 
     let inline ofResult (result: Result<'ok, 'error>) : Validation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(result={Result})", result)
         Result.mapError List.singleton result
 
     let inline ofChoice (choice: Choice<'ok, 'error>) : Validation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofChoice(choice={Choice})", choice)
         match choice with
         | Choice1Of2 x -> ok x
         | Choice2Of2 e -> error e

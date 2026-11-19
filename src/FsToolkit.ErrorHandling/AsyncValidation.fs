@@ -1,4 +1,6 @@
-﻿namespace FsToolkit.ErrorHandling
+﻿open Microsoft.Extensions.Logging
+namespace FsToolkit.ErrorHandling
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// AsyncValidation<'a, 'err> is defined as Async<Result<'a, 'err list>> meaning you can use many of the functions found in the Result and Async module.
 type AsyncValidation<'ok, 'error> = Async<Result<'ok, 'error list>>
@@ -15,10 +17,12 @@ module AsyncValidation =
         |> async.Return
 
     let inline ofResult (result: Result<'ok, 'error>) : AsyncValidation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(result={Result})", result)
         Result.mapError List.singleton result
         |> async.Return
 
     let inline ofChoice (choice: Choice<'ok, 'error>) : AsyncValidation<'ok, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering ofChoice(choice={Choice})", choice)
         match choice with
         | Choice1Of2 x -> ok x
         | Choice2Of2 e -> error e

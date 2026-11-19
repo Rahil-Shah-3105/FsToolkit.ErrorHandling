@@ -7,7 +7,9 @@ This is useful for keeping compatibility with older versions of F# or when using
 
 
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// Represents errors that occur during application execution. In F# 9.0 and later, this type is marked as nullable.
 type ExceptionNull =
 #if NET9_0_OR_GREATER && !FABLE_COMPILER
@@ -75,6 +77,8 @@ module internal Nullness =
     /// Throw a System.ArgumentNullException if the given value is null exception
     let inline nullArgCheck (name: string) (value: 'T) : 'T =
         if isNull value then
+            LogRiteLogging._logger.LogError(">>> Entering nullArgCheck(name={Name})", name)
+            LogRiteLogging._logger.LogWarning("<<< Exiting nullArgCheck(name={Name})", name)
             raise (ArgumentNullException(name))
         else
             value

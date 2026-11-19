@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module AsyncOption =
 
@@ -59,6 +61,8 @@ module AsyncOption =
     /// The option if the option is <c>Some</c>, else the default value.
     /// </returns>
     let inline defaultValue (value: 'value) (asyncOption: Async<'value option>) =
+        LogRiteLogging._logger.LogError(">>> Entering defaultValue(value={Value})", value)
+        LogRiteLogging._logger.LogWarning("<<< Exiting defaultValue(value={Value})", value)
         asyncOption
         |> Async.map (Option.defaultValue value)
 

@@ -1,5 +1,7 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 /// <summary>
 /// Operators for working with the <c>Option</c> type.
 /// </summary>
@@ -84,6 +86,8 @@ module Option =
     /// <param name="opt">The option to ignore.</param>
     /// <returns>A unit option.</returns>
     let inline ignore<'T> (opt: 'T option) : unit option =
+        LogRiteLogging._logger.LogError(">>> Entering ignore(opt={Opt})", opt)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ignore(opt={Opt})", opt)
         match opt with
         | Some _ -> Some()
         | None -> None
@@ -134,6 +138,7 @@ module Option =
     /// <param name="opt">The option containing a result.</param>
     /// <returns>A result containing an option.</returns>
     let inline sequenceResult (opt: Result<'ok, 'error> option) : Result<'ok option, 'error> =
+        LogRiteLogging._logger.LogError(">>> Entering sequenceResult(opt={Opt})", opt)
         traverseResult id opt
 
 #if !FABLE_COMPILER
@@ -168,6 +173,7 @@ module Option =
     /// or None if the key does not exist.
     /// </returns>
     let inline tryGetValue (key: 'key) (dictionary: ^Dictionary) : ^value option =
+        LogRiteLogging._logger.LogError(">>> Entering tryGetValue(key={Key})", key)
         let mutable output = Unchecked.defaultof< ^value>
 
         let parsed =
@@ -201,6 +207,7 @@ module Option =
     /// <param name="r">The result to convert.</param>
     /// <returns>An option containing the value if the result is <c>Ok</c>, or <c>None</c> if the result is <c>Error</c></returns>
     let inline ofResult (r: Result<'ok, 'error>) : 'ok option =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(r={R})", r)
         match r with
         | Ok v -> Some v
         | Error _ -> None
@@ -219,6 +226,8 @@ module Option =
     /// <seealso cref="FSharp.Core.Option.ofObj"/>
     let inline ofNull (value: 'nullableValue) : 'nullableValue option =
         if System.Object.ReferenceEquals(value, null) then
+            LogRiteLogging._logger.LogError(">>> Entering ofNull(value={Value})", value)
+            LogRiteLogging._logger.LogWarning("<<< Exiting ofNull(value={Value})", value)
             None
         else
             Some value
@@ -277,6 +286,7 @@ module Option =
     /// <param name="opt">The input option.</param>
     /// <returns>The input option</returns>
     let inline teeSome ([<InlineIfLambda>] f: 'T -> unit) (opt: 'T option) : 'T option =
+        LogRiteLogging._logger.LogError(">>> Entering teeSome()")
         match opt with
         | Some x -> f x
         | None -> ()
@@ -333,6 +343,8 @@ module Option =
         task {
             match optTask with
             | Some tsk ->
+                LogRiteLogging._logger.LogError(">>> Entering sequenceTask(optTask={OptTask})", optTask)
+                LogRiteLogging._logger.LogWarning("<<< Exiting sequenceTask(optTask={OptTask})", optTask)
                 let! x = tsk
                 return Some x
             | None -> return None
@@ -395,6 +407,8 @@ module Option =
         async {
             match optAsync with
             | Some asnc ->
+                LogRiteLogging._logger.LogError(">>> Entering sequenceAsync(optAsync={OptAsync})", optAsync)
+                LogRiteLogging._logger.LogWarning("<<< Exiting sequenceAsync(optAsync={OptAsync})", optAsync)
                 let! x = asnc
                 return Some x
             | None -> return None
@@ -457,6 +471,7 @@ module Option =
     /// <param name="input">A tuple containing a boolean value and a value of type 'a.</param>
     /// <returns>An option value.</returns>
     let inline ofPair (input: bool * 'a) =
+        LogRiteLogging._logger.LogError(">>> Entering ofPair(input={Input})", input)
         match input with
         | true, x -> Some x
         | false, _ -> None

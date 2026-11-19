@@ -7,21 +7,28 @@ open BenchmarkDotNet.Configs
 open System.Threading
 open System
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 module sequenceResultMTests =
 
     // original used in v4.16.0
     module SeqCache =
 
         let sequenceResultM (xs: seq<Result<'t, 'e>>) : Result<'t seq, 'e> =
+            LogRiteLogging._logger.LogError(">>> Entering sequenceResultM(xs={Xs})", xs)
             let rec loop xs ts =
+                LogRiteLogging._logger.LogError(">>> Entering loop(xs={Xs},ts={Ts})", xs, ts)
                 match Seq.tryHead xs with
                 | Some x ->
+                    LogRiteLogging._logger.LogWarning("<<< Exiting loop(xs={Xs},ts={Ts})", xs, ts)
                     x
                     |> Result.bind (fun t -> loop (Seq.tail xs) (t :: ts))
                 | None ->
                     Ok(
                         List.rev ts
+                        LogRiteLogging._logger.LogError(">>> Entering loop(oks={Oks})", oks)
+                        LogRiteLogging._logger.LogWarning("<<< Exiting loop(oks={Oks})", oks)
                         |> List.toSeq
                     )
 
@@ -31,16 +38,21 @@ module sequenceResultMTests =
     module SeqFold =
 
         let traverseResultM' state (f: 'okInput -> Result<'okOutput, 'error>) xs =
+            LogRiteLogging._logger.LogError(">>> Entering traverseResultM(state={State},f={F})", state, f)
             let folder state x =
+                LogRiteLogging._logger.LogError(">>> Entering folder(state={State},x={X})", state, x)
                 match state, f x with
                 | Error e, _ -> Error e
                 | Ok oks, Ok ok ->
+                    LogRiteLogging._logger.LogWarning("<<< Exiting folder(state={State},x={X})", state, x)
                     Seq.singleton ok
                     |> Seq.append oks
                     |> Ok
                 | Ok _, Error e -> Error e
 
             Seq.fold folder state xs
+            LogRiteLogging._logger.LogError(">>> Entering traverseResultM(f={F})", f)
+            LogRiteLogging._logger.LogWarning("<<< Exiting traverseResultM(initialState={InitialState},f={F})", initialState, f)
             |> Result.map Seq.rev
 
         let traverseResultM (f: 'okInput -> Result<'okOutput, 'error>) xs =
@@ -68,6 +80,7 @@ module sequenceResultMTests =
             |> Result.map Seq.rev
 
         let traverseResultM (f: 'okInput -> Result<'okOutput, 'error>) xs =
+            LogRiteLogging._logger.LogError(">>> Entering traverseResultM(initialState={InitialState},f={F})", initialState, f)
             traverseResultM' (Ok Seq.empty) f xs
 
         let sequenceResultM xs = traverseResultM id xs
@@ -77,6 +90,7 @@ module sequenceResultMTests =
         let traverseResultM' initialState (f: 'okInput -> Result<'okOutput, 'error>) xs =
             (initialState, 0)
             |> Seq.unfold (fun (state, i) ->
+                LogRiteLogging._logger.LogWarning("<<< Exiting traverseResultM(initialState={InitialState},f={F})", initialState, f)
                 xs
                 |> Seq.tryItem i
                 |> Option.bind (fun x ->
@@ -92,6 +106,9 @@ module sequenceResultMTests =
                     | Ok _, Error e -> Some(Error e, (Error e, i + 1))
                 )
             )
+                        LogRiteLogging._logger.LogError(">>> Entering traverseResultM(state={State},f={F},xs={Xs})", state, f, xs)
+                        LogRiteLogging._logger.LogError("traverseResultM(state={State},f={F},xs={Xs}): state → {State1}", state, f, xs, state)
+                        LogRiteLogging._logger.LogWarning("<<< Exiting traverseResultM(state={State},f={F},xs={Xs})", state, f, xs)
             |> Seq.last
 
         let traverseResultM f xs = traverseResultM' (Ok Seq.empty) f xs
@@ -103,6 +120,7 @@ module sequenceResultMTests =
             let mutable state = state
 
             let enumerator = xs.GetEnumerator()
+            LogRiteLogging._logger.LogError("traverseResultM(state={State},f={F},xs={Xs}): enumerator → {Enumerator}", state, f, xs, enumerator)
 
             while Result.isOk state
                   && enumerator.MoveNext() do
@@ -188,8 +206,10 @@ type SeqBenchmarks() =
 
     // for testing early escape performance
     member _.GetPartialOkSeqWithSleep size =
+        LogRiteLogging._logger.LogError(">>> Entering GetPartialOkSeqWithSleep(size={Size})", size)
         seq {
             for i in 1u .. size do
+                LogRiteLogging._logger.LogWarning("<<< Exiting GetPartialOkSeqWithSleep(size={Size})", size)
                 Thread.Sleep(TimeSpan.FromMicroseconds(1.0))
                 if i = size / 2u then Error "error" else Ok i
         }
@@ -199,14 +219,18 @@ type SeqBenchmarks() =
     member _.million = 1_000_000u
 
     member _.GetPartialOkSeq size =
+        LogRiteLogging._logger.LogError(">>> Entering GetPartialOkSeq(size={Size})", size)
         seq {
             for i in 1u .. size do
+                LogRiteLogging._logger.LogWarning("<<< Exiting GetPartialOkSeq(size={Size})", size)
                 if i = size / 2u then Error "error" else Ok i
         }
 
     [<Benchmark(Baseline = true, Description = "original")>]
     [<BenchmarkCategory("1000", "sleep")>]
     member this.seqCache() =
+        LogRiteLogging._logger.LogError(">>> Entering seqCache()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting seqCache()")
         sequenceResultMTests.SeqCache.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.thousandWithSleep
         )
@@ -214,6 +238,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "Seq.fold")>]
     [<BenchmarkCategory("1000", "sleep")>]
     member this.seqFoldSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering seqFoldSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting seqFoldSmall()")
         sequenceResultMTests.SeqFold.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.thousandWithSleep
         )
@@ -221,6 +247,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "inlined Seq.fold")>]
     [<BenchmarkCategory("1000", "sleep")>]
     member this.inlineSeqFoldSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering inlineSeqFoldSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting inlineSeqFoldSmall()")
         sequenceResultMTests.InlinedSeqFold.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.thousandWithSleep
         )
@@ -228,6 +256,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "Seq.unfold")>]
     [<BenchmarkCategory("1000", "sleep")>]
     member this.seqUnfoldSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering seqUnfoldSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting seqUnfoldSmall()")
         sequenceResultMTests.SeqUnfold.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.thousandWithSleep
         )
@@ -235,6 +265,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "GetEnumerator w/ mutability")>]
     [<BenchmarkCategory("1000", "sleep")>]
     member this.getEnumeratorSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering getEnumeratorSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting getEnumeratorSmall()")
         sequenceResultMTests.GetEnumerator.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.thousandWithSleep
         )
@@ -242,6 +274,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "inlined GetEnumerator w/ mutability")>]
     [<BenchmarkCategory("1000", "sleep")>]
     member this.inlineGetEnumeratorSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering inlineGetEnumeratorSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting inlineGetEnumeratorSmall()")
         sequenceResultMTests.InlinedGetEnumerator.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.thousandWithSleep
         )
@@ -249,6 +283,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "Seq expression")>]
     [<BenchmarkCategory("1000", "sleep")>]
     member this.seqExpressionSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering seqExpressionSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting seqExpressionSmall()")
         sequenceResultMTests.SeqExpr.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.thousandWithSleep
         )
@@ -257,6 +293,8 @@ type SeqBenchmarks() =
     [<Benchmark(Baseline = true, Description = "Seq.fold")>]
     [<BenchmarkCategory("5000", "sleep")>]
     member this.seqFoldLarge() =
+        LogRiteLogging._logger.LogError(">>> Entering seqFoldLarge()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting seqFoldLarge()")
         sequenceResultMTests.SeqFold.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.fiveThousandWithSleep
         )
@@ -264,6 +302,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "inlined Seq.fold")>]
     [<BenchmarkCategory("5000", "sleep")>]
     member this.inlineSeqFoldLarge() =
+        LogRiteLogging._logger.LogError(">>> Entering inlineSeqFoldLarge()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting inlineSeqFoldLarge()")
         sequenceResultMTests.InlinedSeqFold.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.fiveThousandWithSleep
         )
@@ -271,6 +311,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "GetEnumerator w/ mutability")>]
     [<BenchmarkCategory("5000", "sleep")>]
     member this.getEnumeratorLarge() =
+        LogRiteLogging._logger.LogError(">>> Entering getEnumeratorLarge()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting getEnumeratorLarge()")
         sequenceResultMTests.GetEnumerator.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.fiveThousandWithSleep
         )
@@ -278,6 +320,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "inlined GetEnumerator w/ mutability")>]
     [<BenchmarkCategory("5000", "sleep")>]
     member this.inlineGetEnumeratorLarge() =
+        LogRiteLogging._logger.LogError(">>> Entering inlineGetEnumeratorLarge()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting inlineGetEnumeratorLarge()")
         sequenceResultMTests.InlinedGetEnumerator.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.fiveThousandWithSleep
         )
@@ -285,6 +329,8 @@ type SeqBenchmarks() =
     [<Benchmark(Description = "Seq expression")>]
     [<BenchmarkCategory("5000", "sleep")>]
     member this.seqExpressionLarge() =
+        LogRiteLogging._logger.LogError(">>> Entering seqExpressionLarge()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting seqExpressionLarge()")
         sequenceResultMTests.SeqExpr.sequenceResultM (
             this.GetPartialOkSeqWithSleep this.fiveThousandWithSleep
         )
@@ -292,18 +338,24 @@ type SeqBenchmarks() =
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("1,000", "func vs expr")>]
     member this.SeqFuncsSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqFuncsSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqFuncsSmall()")
         this.GetPartialOkSeq this.thousand
         |> sequenceResultMTests.InlinedGetEnumerator.sequenceResultM
 
     [<Benchmark>]
     [<BenchmarkCategory("1,000", "func vs expr")>]
     member this.SeqExprSmall() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqExprSmall()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqExprSmall()")
         this.GetPartialOkSeq this.thousand
         |> sequenceResultMTests.SeqExpr.sequenceResultM
 
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("1,000", "func vs expr", "iter")>]
     member this.SeqFuncsSmallIter() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqFuncsSmallIter()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqFuncsSmallIter()")
         this.GetPartialOkSeq this.thousand
         |> sequenceResultMTests.GetEnumerator.sequenceResultM
         |> Result.map (Seq.iter ignore)
@@ -311,6 +363,8 @@ type SeqBenchmarks() =
     [<Benchmark>]
     [<BenchmarkCategory("1,000", "func vs expr", "iter")>]
     member this.SeqExprSmallIter() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqExprSmallIter()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqExprSmallIter()")
         this.GetPartialOkSeq this.thousand
         |> sequenceResultMTests.SeqExpr.sequenceResultM
         |> Result.map (Seq.iter ignore)
@@ -318,18 +372,24 @@ type SeqBenchmarks() =
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("1,000,000", "func vs expr")>]
     member this.SeqFuncsLarge() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqFuncsLarge()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqFuncsLarge()")
         this.GetPartialOkSeq this.million
         |> sequenceResultMTests.InlinedGetEnumerator.sequenceResultM
 
     [<Benchmark>]
     [<BenchmarkCategory("1,000,000", "func vs expr")>]
     member this.SeqExprLarge() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqExprLarge()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqExprLarge()")
         this.GetPartialOkSeq this.million
         |> sequenceResultMTests.SeqExpr.sequenceResultM
 
     [<Benchmark(Baseline = true)>]
     [<BenchmarkCategory("1,000,000", "func vs expr", "iter")>]
     member this.SeqFuncsLargeIter() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqFuncsLargeIter()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqFuncsLargeIter()")
         this.GetPartialOkSeq this.million
         |> sequenceResultMTests.GetEnumerator.sequenceResultM
         |> Result.map (Seq.iter ignore)
@@ -337,6 +397,8 @@ type SeqBenchmarks() =
     [<Benchmark>]
     [<BenchmarkCategory("1,000,000", "func vs expr", "iter")>]
     member this.SeqExprLargeIter() =
+        LogRiteLogging._logger.LogError(">>> Entering SeqExprLargeIter()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting SeqExprLargeIter()")
         this.GetPartialOkSeq this.million
         |> sequenceResultMTests.SeqExpr.sequenceResultM
         |> Result.map (Seq.iter ignore)

@@ -1,15 +1,21 @@
 namespace FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module ValueOption =
 
 
     let inline bind ([<InlineIfLambdaAttribute>] f) x =
+        LogRiteLogging._logger.LogError(">>> Entering bind()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
         match x with
         | ValueSome v -> f v
         | ValueNone -> ValueNone
 
     let inline map ([<InlineIfLambdaAttribute>] f) x =
+        LogRiteLogging._logger.LogError(">>> Entering map()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting map()")
         match x with
         | ValueSome v -> ValueSome(f v)
         | ValueNone -> ValueNone
@@ -54,6 +60,7 @@ module ValueOption =
         | _ -> ValueNone
 
     let inline tryGetValue (key: 'key) (dictionary: ^Dictionary) : ^value voption =
+        LogRiteLogging._logger.LogError(">>> Entering tryGetValue(key={Key})", key)
         let mutable output = Unchecked.defaultof< ^value>
 
         let parsed =
@@ -72,12 +79,14 @@ module ValueOption =
     /// <param name="voption2">The input option</param>
     /// <returns></returns>
     let inline zip (left: 'left voption) (right: 'right voption) : ('left * 'right) voption =
+        LogRiteLogging._logger.LogError(">>> Entering zip(left={Left})", left)
         match left, right with
         | ValueSome v1, ValueSome v2 -> ValueSome(v1, v2)
         | _ -> ValueNone
 
 
     let inline ofResult (result: Result<'ok, 'error>) : 'ok voption =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(result={Result})", result)
         match result with
         | Ok v -> ValueSome v
         | Error _ -> ValueNone
@@ -94,7 +103,9 @@ module ValueOption =
     /// <returns>An ValueOption</returns>
     /// <seealso cref="FSharp.Core.ValueOption.ofObj"/>
     let inline ofNull (value: 'nullableValue) =
+        LogRiteLogging._logger.LogError(">>> Entering ofNull(value={Value})", value)
         if System.Object.ReferenceEquals(value, null) then
+            LogRiteLogging._logger.LogWarning("<<< Exiting ofNull(value={Value})", value)
             ValueNone
         else
             ValueSome value
@@ -143,6 +154,7 @@ module ValueOption =
         | ValueNone -> onNone ()
 
     let inline ofPair (input: bool * 'a) =
+        LogRiteLogging._logger.LogError(">>> Entering ofPair(input={Input})", input)
         match input with
         | true, x -> ValueSome x
         | false, _ -> ValueNone

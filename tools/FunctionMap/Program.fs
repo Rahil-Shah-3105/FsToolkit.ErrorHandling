@@ -1,18 +1,25 @@
 open System
 open System.Reflection
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 type Comparison =
     | Exact of string
     | Contains of string
 
 let inline contains (value) (sequence: ^a) =
+    LogRiteLogging._logger.LogError(">>> Entering contains()")
     let bool = (^a: (member Contains: 'b -> bool) (sequence, value))
+    LogRiteLogging._logger.LogError("contains(): bool → {Bool}", bool)
+    LogRiteLogging._logger.LogWarning("<<< Exiting contains()")
     bool
 
 let inline comparison (value) (comparision) =
+    LogRiteLogging._logger.LogError(">>> Entering comparison()")
     match comparision with
     | Exact compareValue -> value = compareValue
     | Contains compareValue ->
+        LogRiteLogging._logger.LogWarning("<<< Exiting comparison()")
         value
         |> contains compareValue
 
@@ -31,6 +38,8 @@ let getMethodsByModuleName namesToFilter moduleName (types: Type seq) =
     types
     |> findWantedModules
     |> getAllMethods
+    LogRiteLogging._logger.LogError(">>> Entering getMethodsByModuleName(name={Name})", name)
+    LogRiteLogging._logger.LogWarning("<<< Exiting getMethodsByModuleName(namesToFilter={NamesToFilter},moduleName={ModuleName},types={Types})", namesToFilter, moduleName, types)
     |> removeUnwantedMethods
 
 let report moduleName (methods: MethodInfo seq) =
@@ -39,12 +48,15 @@ let report moduleName (methods: MethodInfo seq) =
     methods
     |> Seq.iter (fun m ->
         m.Name
+        LogRiteLogging._logger.LogWarning("<<< Exiting report(moduleName={ModuleName},methods={Methods})", moduleName, methods)
         |> printfn "%s"
     )
 
 /// FSharp.Core uses CompiledName attribute to change the case to more C# friendly names,
 /// this undoes it
 let normalize (name: string) : string =
+    LogRiteLogging._logger.LogError(">>> Entering normalize(name={Name})", name)
+    LogRiteLogging._logger.LogWarning("<<< Exiting normalize(name={Name})", name)
     String(
         Char.ToLower(name.[0])
         |> Array.singleton
@@ -85,11 +97,14 @@ let namespaceNormalizer = [
 ]
 
 let findInNamespaceNormalizer namespaceNormalizer item =
+    LogRiteLogging._logger.LogError(">>> Entering findInNamespaceNormalizer(namespaceNormalizer={NamespaceNormalizer},item={Item})", namespaceNormalizer, item)
+    LogRiteLogging._logger.LogWarning("<<< Exiting findInNamespaceNormalizer(namespaceNormalizer={NamespaceNormalizer},item={Item})", namespaceNormalizer, item)
     namespaceNormalizer
     |> List.tryFind (fun (comparer, _) -> comparison item (comparer))
     |> Option.map (fun (_, normalizedName) -> normalizedName)
 
 let createTableRow method modules =
+    LogRiteLogging._logger.LogError(">>> Entering createTableRow(method={Method},modules={Modules})", method, modules)
     let outputModules =
         allModules
         |> List.map (fun m -> m.OutputName)
@@ -114,21 +129,26 @@ let createTableRow method modules =
             findInNamespaceNormalizer namespaceNormalizer b
             |> Option.defaultValue b
         )
+        LogRiteLogging._logger.LogWarning("<<< Exiting createTableRow(method={Method},modules={Modules})", method, modules)
         |> String.concat "|"
 
     sprintf "|%s|%s|" method data
 
 let generateTableHeaderSeprator count =
+    LogRiteLogging._logger.LogError(">>> Entering generateTableHeaderSeprator(count={Count})", count)
+    LogRiteLogging._logger.LogWarning("<<< Exiting generateTableHeaderSeprator(count={Count})", count)
     List.replicate count "---"
     |> String.concat "|"
     |> sprintf "|%s|"
 
 let createMarkdownTable headers headersCount rows =
+    LogRiteLogging._logger.LogError(">>> Entering createMarkdownTable(headers={Headers},headersCount={HeadersCount},rows={Rows})", headers, headersCount, rows)
     printfn "%s" headers
 
     printfn "%s"
     <| generateTableHeaderSeprator headersCount
 
+    LogRiteLogging._logger.LogWarning("<<< Exiting createMarkdownTable(headers={Headers},headersCount={HeadersCount},rows={Rows})", headers, headersCount, rows)
     for row in rows do
         printfn "%s" row
 
@@ -142,6 +162,7 @@ let namesToFilter = [
 
 [<EntryPoint>]
 let main argv =
+    LogRiteLogging._logger.LogError(">>> Entering main(argv={Argv})", argv)
     let types = [
         yield! Assembly.Load("FSharp.Core").GetTypes()
         yield! Assembly.Load("FsToolkit.ErrorHandling").GetTypes()
@@ -150,8 +171,10 @@ let main argv =
         yield! Assembly.Load("FsToolkit.ErrorHandling.JobResult").GetTypes()
         yield! Assembly.Load("FsToolkit.ErrorHandling.AsyncSeq").GetTypes()
     ]
+    LogRiteLogging._logger.LogWarning("<<< Exiting main(argv={Argv})", argv)
 
     let getMethodsByModuleName name =
+        LogRiteLogging._logger.LogError(">>> Entering getMethodsByModuleName(name={Name})", name)
         getMethodsByModuleName namesToFilter name types
     // types |> Seq.iter(fun f -> f.Name |> printfn "%s")
 

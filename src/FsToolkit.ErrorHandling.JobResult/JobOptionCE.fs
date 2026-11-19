@@ -3,19 +3,25 @@ namespace FsToolkit.ErrorHandling
 open System.Threading.Tasks
 open System
 open Hopac
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module JobOptionCE =
 
     type JobOptionBuilder() =
 
         member inline _.Return(value: 'T) : Job<_ option> =
+            LogRiteLogging._logger.LogError(">>> Entering Return(value={Value})", value)
+            LogRiteLogging._logger.LogWarning("<<< Exiting Return(value={Value})", value)
             Some value
             |> job.Return
 
         member inline _.ReturnFrom(jobResult: Job<_ option>) : Job<_ option> = jobResult
 
         member inline _.Zero() : Job<_ option> =
+            LogRiteLogging._logger.LogError(">>> Entering Zero()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting Zero()")
             Some()
             |> job.Return
 
@@ -38,6 +44,7 @@ module JobOptionCE =
             this.Bind(Job.fromTask taskResult, binder)
 
         member inline _.Delay([<InlineIfLambda>] generator: unit -> Job<_ option>) : Job<_ option> =
+            LogRiteLogging._logger.LogError(">>> Entering Delay()")
             Job.delay generator
 
         member inline this.Combine
@@ -75,6 +82,7 @@ module JobOptionCE =
             job.Using(resource, binder)
 
         member this.While(guard: unit -> bool, computation: Job<_ option>) : Job<_ option> =
+            LogRiteLogging._logger.LogError(">>> Entering While(guard={Guard},computation={Computation})", guard, computation)
             job {
                 let mutable doContinue = true
                 let mutable result = Some()
@@ -84,6 +92,8 @@ module JobOptionCE =
                     match! computation with
                     | Some() -> ()
                     | None ->
+                        LogRiteLogging._logger.LogError("While(guard={Guard},computation={Computation}): result → {Result}", guard, computation, result)
+                        LogRiteLogging._logger.LogWarning("<<< Exiting While(guard={Guard},computation={Computation})", guard, computation)
                         doContinue <- false
                         result <- None
 
@@ -137,6 +147,7 @@ module JobOptionCEExtensions =
         /// Method lets us transform data types into our internal representation.
         /// </summary>
         member inline _.Source(a: Async<'t>) =
+            LogRiteLogging._logger.LogError(">>> Entering Source(a={A})", a)
             a
             |> Job.fromAsync
             |> Job.map Some

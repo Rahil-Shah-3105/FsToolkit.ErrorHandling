@@ -3,56 +3,72 @@
 let inline id x = x
 
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 Result.ofChoice
 
 module Operators =
 
     let inline bindM builder m ([<InlineIfLambda>] f) =
+        LogRiteLogging._logger.LogError(">>> Entering bindM(builder={Builder},m={M})", builder, m)
         (^M: (member Bind: 'd -> ('e -> 'c) -> 'c) (builder, m, f))
 
     let inline bind2M builder m1 m2 f =
+        LogRiteLogging._logger.LogError(">>> Entering bind2M(builder={Builder},m1={M1},m2={M2},f={F})", builder, m1, m2, f)
         (^M: (member Bind2: 'a -> 'b -> ('e * 'f -> 'c) -> 'c) (builder, m1, m2, f))
 
     let inline delayM builder x =
+        LogRiteLogging._logger.LogError(">>> Entering delayM(builder={Builder},x={X})", builder, x)
         (^M: (member Delay: (unit -> 'a) -> 'c) (builder, x))
 
     /// Inject a value into the monadic type
     let inline returnM builder x =
+        LogRiteLogging._logger.LogError(">>> Entering returnM(builder={Builder},x={X})", builder, x)
         (^M: (member Return: 'b -> 'c) (builder, x))
 
     let inline returnFromM builder x =
+        LogRiteLogging._logger.LogError(">>> Entering returnFromM(builder={Builder},x={X})", builder, x)
         (^M: (member ReturnFrom: 'b -> 'c) (builder, x))
 
     let inline bindReturnM builder m ([<InlineIfLambda>] f) =
+        LogRiteLogging._logger.LogError(">>> Entering bindReturnM(builder={Builder},m={M})", builder, m)
         (^M: (member BindReturn: 'd -> ('e -> 'c) -> 'f) (builder, m, f))
 
     let inline bind2ReturnM builder m1 m2 ([<InlineIfLambda>] f) =
+        LogRiteLogging._logger.LogError(">>> Entering bind2ReturnM(builder={Builder},m1={M1},m2={M2})", builder, m1, m2)
         (^M: (member Bind2Return: 'a -> 'b -> ('c * 'd -> 'e) -> 'f) (builder, m1, m2, f))
 
     let inline mergeSourcesM builder m1 m2 =
+        LogRiteLogging._logger.LogError(">>> Entering mergeSourcesM(builder={Builder},m1={M1},m2={M2})", builder, m1, m2)
         (^M: (member MergeSources: 'a * 'b -> 'c) (builder, m1, m2))
 
     let inline mergeSources3M builder m1 m2 m3 =
+        LogRiteLogging._logger.LogError(">>> Entering mergeSources3M(builder={Builder},m1={M1},m2={M2},m3={M3})", builder, m1, m2, m3)
         (^M: (member MergeSources3: 'a * 'b * 'c -> 'd) (builder, m1, m2, m3))
 
     let inline liftM builder m ([<InlineIfLambda>] f) =
+        LogRiteLogging._logger.LogError(">>> Entering liftM(builder={Builder},m={M})", builder, m)
         bindM builder m
         <| fun m1 -> returnM builder (f m1)
 
     let inline lift2M builder1 builder2 m1 m2 ([<InlineIfLambda>] f) =
+        LogRiteLogging._logger.LogError(">>> Entering lift2M(builder1={Builder1},builder2={Builder2},m1={M1},m2={M2})", builder1, builder2, m1, m2)
         bindM builder1 m1
         <| fun m1' ->
+            LogRiteLogging._logger.LogWarning("<<< Exiting lift2M(builder1={Builder1},builder2={Builder2},m1={M1},m2={M2})", builder1, builder2, m1, m2)
             liftM builder2 m2
             <| fun m2' -> (f m1' m2')
 
     /// Sequential application
     let inline applyM (builder1: ^M1) (builder2: ^M2) f m =
+        LogRiteLogging._logger.LogError(">>> Entering applyM(builder1={Builder1})", builder1)
         lift2M builder1 builder2 f m
         <| fun f x -> f x
 
     /// Sequential application
     let inline zipM (builder1: ^M1) (builder2: ^M2) m1 m2 =
+        LogRiteLogging._logger.LogError(">>> Entering zipM(builder1={Builder1})", builder1)
         lift2M builder1 builder2 m1 m2
         <| fun m1' m2' -> (m1', m2')
 
@@ -74,6 +90,7 @@ module Result =
     open FsToolkit.ErrorHandling
 
     let inline either ([<InlineIfLambda>] okF) ([<InlineIfLambda>] errorF) =
+        LogRiteLogging._logger.LogError(">>> Entering either()")
         function
         | Ok x -> okF x
         | Error e -> errorF e
@@ -88,24 +105,29 @@ module Result =
     let inline zip x y = mergeSources x y
 
     let inline apply f x =
+        LogRiteLogging._logger.LogError(">>> Entering apply(f={F},x={X})", f, x)
         mergeSources f x
         |> bindReturn (fun (f', x') -> f' x')
 
     let inline sequence builder f x =
+        LogRiteLogging._logger.LogError(">>> Entering sequence(builder={Builder},f={F},x={X})", builder, f, x)
         x
         |> either
             (fun x -> Operators.bindReturnM builder x f)
             (fun x ->
+                LogRiteLogging._logger.LogWarning("<<< Exiting sequence(builder={Builder},f={F},x={X})", builder, f, x)
                 x
                 |> Result.Error
                 |> Operators.returnM builder
             )
 
     let inline sequenceLift builder f x =
+        LogRiteLogging._logger.LogError(">>> Entering sequenceLift(builder={Builder},f={F},x={X})", builder, f, x)
         x
         |> either
             (fun x -> Operators.liftM builder x f)
             (fun x ->
+                LogRiteLogging._logger.LogWarning("<<< Exiting sequenceLift(builder={Builder},f={F},x={X})", builder, f, x)
                 x
                 |> Result.Error
                 |> Operators.returnM builder
@@ -123,8 +145,10 @@ module AsyncResult =
         member inline _.Return x = Async.singleton (Result.singleton x)
 
         member inline _.Bind(m, f: 'a -> Async<Result<'b, 'c>>) =
+            LogRiteLogging._logger.LogError(">>> Entering Bind(m={M},f={F})", m, f)
             m
             |> Async.bind (fun x ->
+                LogRiteLogging._logger.LogWarning("<<< Exiting Bind(m={M},f={F})", m, f)
                 Result.map f x
                 |> Result.sequenceAsyncResult
             )
@@ -140,6 +164,7 @@ module AsyncResult =
             member inline _.Source(x: Async<'a>) = Async.map Ok x
 
             member inline _.Source(x: Task<'a>) =
+                LogRiteLogging._logger.LogError(">>> Entering Source(x={X})", x)
                 task {
                     let! x = x
                     return Ok x
@@ -154,6 +179,7 @@ module AsyncResult =
     let inline singleton x = Operators.returnM asyncResult x
 
     let example () =
+        LogRiteLogging._logger.LogError(">>> Entering example()")
         asyncResult {
             let! x = singleton 1
             let! y = singleton 2
@@ -164,6 +190,7 @@ module AsyncResult =
                 x
                 + y
                 + z
+                LogRiteLogging._logger.LogError(">>> Entering bind(f={F},x={X})", f, x)
                 + a
         }
 
@@ -182,6 +209,7 @@ module DisposableOptionThings =
 
         interface IDisposable with
             member this.Dispose() =
+                LogRiteLogging._logger.LogError(">>> Entering Dispose()")
                 match this with
                 | None -> ()
                 | Some x -> x.Dispose()
@@ -229,16 +257,19 @@ module DisposableOptionThings =
     [<RequireQualifiedAccess>]
     module DisposableOption =
         let inline bind f x =
+            LogRiteLogging._logger.LogError(">>> Entering bind(f={F},x={X})", f, x)
             match x with
             | DisposableOption.Some x -> f x
             | DisposableOption.None -> None
 
         let inline map f x =
+            LogRiteLogging._logger.LogError(">>> Entering map(f={F},x={X})", f, x)
             match x with
             | DisposableOption.Some x -> Some(f x)
             | DisposableOption.None -> None
 
         let inline iter f x =
+            LogRiteLogging._logger.LogError(">>> Entering iter(f={F},x={X})", f, x)
             match x with
             | DisposableOption.Some x -> f x
             | DisposableOption.None -> ()
@@ -251,6 +282,7 @@ module DisposableOptionThings =
 
         interface IAsyncDisposable with
             member this.DisposeAsync() =
+                LogRiteLogging._logger.LogError(">>> Entering DisposeAsync()")
                 match this with
                 | Some x -> x.DisposeAsync()
                 | None -> ValueTask()
@@ -265,11 +297,13 @@ module DisposableOptionThings =
                 Some x
 
         member inline x.toOption() =
+            LogRiteLogging._logger.LogError(">>> Entering toOption()")
             match x with
             | Some x -> Option.Some x
             | None -> Option.None
 
         member inline x.toValueOption() =
+            LogRiteLogging._logger.LogError(">>> Entering toValueOption()")
             match x with
             | Some x -> ValueOption.Some x
             | None -> ValueOption.None
@@ -299,6 +333,7 @@ module Examples =
     open System.Diagnostics
 
     let inline implicitConv (x: ^T) : ^U =
+        LogRiteLogging._logger.LogError(">>> Entering implicitConv(x={X})", x)
         ((^T or ^U): (static member op_Implicit: ^T -> ^U) (x))
 
     let inline (!>) x = implicitConv x

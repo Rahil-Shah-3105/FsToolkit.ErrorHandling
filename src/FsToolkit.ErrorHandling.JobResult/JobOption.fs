@@ -2,17 +2,21 @@ namespace FsToolkit.ErrorHandling
 
 open Hopac
 open Hopac.Infixes
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module JobOption =
 
     let inline map ([<InlineIfLambda>] f) ar = Job.map (Option.map f) ar
 
     let inline bind ([<InlineIfLambda>] f) (ar: Job<_>) =
+        LogRiteLogging._logger.LogError(">>> Entering bind()")
         job {
             let! opt = ar
 
             let t =
+                LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
                 match opt with
                 | Some x -> f x
                 | None -> Job.result None
@@ -23,6 +27,7 @@ module JobOption =
     let inline singleton x = Job.result (Some x)
 
     let inline apply f x =
+        LogRiteLogging._logger.LogError(">>> Entering apply(f={F},x={X})", f, x)
         bind (fun f' -> bind (fun x' -> singleton (f' x')) x) f
 
 

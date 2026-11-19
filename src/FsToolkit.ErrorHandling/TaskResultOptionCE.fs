@@ -2,7 +2,9 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module TaskResultOptionCE =
     open System
@@ -32,6 +34,8 @@ module TaskResultOptionCE =
         val mutable MethodBuilder: AsyncTaskResultOptionMethodBuilder<'T, 'Error>
 
         member this.IsResultError =
+            LogRiteLogging._logger.LogError(">>> Entering IsResultError()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting IsResultError()")
             match this.Result with
             | Error _ -> true
             | Ok None -> true
@@ -57,7 +61,9 @@ module TaskResultOptionCE =
     type TaskResultOptionBuilder() =
         member inline _.Return(value: 'T) : TaskResultOptionCode<'T, 'Error, 'T> =
             TaskResultOptionCode<'T, 'Error, _>(fun sm ->
+                LogRiteLogging._logger.LogError(">>> Entering Return(value={Value})", value)
                 // printfn "Return Called --> "
+                LogRiteLogging._logger.LogWarning("<<< Exiting Return(value={Value})", value)
                 sm.Data.Result <- Ok(Some value)
 
                 true
@@ -147,6 +153,8 @@ module TaskResultOptionCE =
 
         member inline _.Combine(tro1, tro2) =
 
+            LogRiteLogging._logger.LogError(">>> Entering Combine(tro1={Tro1},tro2={Tro2})", tro1, tro2)
+            LogRiteLogging._logger.LogWarning("<<< Exiting Combine(tro1={Tro1},tro2={Tro2})", tro1, tro2)
             ResumableCode.Combine(tro1, tro2)
 
         member inline _.Delay
@@ -165,6 +173,7 @@ module TaskResultOptionCE =
             let resumptionInfo =
                 { new TaskResultOptionResumptionDynamicInfo<_, _>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
+                        LogRiteLogging._logger.LogError(">>> Entering MoveNext(sm={Sm})", sm)
                         let mutable savedExn = null
 
                         try
@@ -182,11 +191,13 @@ module TaskResultOptionCE =
                             else
                                 match sm.ResumptionDynamicInfo.ResumptionData with
                                 | :? ICriticalNotifyCompletion as awaiter ->
+                                    LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, awaiter.Message)
                                     let mutable awaiter = awaiter
                                     sm.Data.MethodBuilder.AwaitUnsafeOnCompleted(&awaiter, &sm)
                                 | awaiter -> assert not (isNull awaiter)
 
                         with exn ->
+                            LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, exn.Message)
                             savedExn <- exn
                         // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                         match savedExn with
@@ -194,6 +205,7 @@ module TaskResultOptionCE =
                         | exn -> sm.Data.MethodBuilder.SetException exn
 
                     member _.SetStateMachine(sm, state) =
+                        LogRiteLogging._logger.LogError(">>> Entering SetStateMachine(sm={Sm},state={State})", sm, state)
                         sm.Data.MethodBuilder.SetStateMachine(state)
                 }
 
@@ -290,6 +302,7 @@ module TaskResultOptionCEExtensions =
         /// Method lets us transform data types into our internal representation.
         /// </summary>
         member inline this.Source(result: Choice<'ok, 'error>) : TaskResultOption<'ok, 'error> =
+            LogRiteLogging._logger.LogError(">>> Entering Source(result={Result})", result)
             this.Source(Result.ofChoice result)
 
         /// <summary>

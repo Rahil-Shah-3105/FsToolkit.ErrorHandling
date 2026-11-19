@@ -1,7 +1,9 @@
 namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<RequireQualifiedAccess>]
 module TaskResult =
 
@@ -10,6 +12,8 @@ module TaskResult =
     let inline mapError ([<InlineIfLambda>] f) tr = Task.map (Result.mapError f) tr
 
     let inline bind ([<InlineIfLambda>] f) (tr: Task<_>) =
+        LogRiteLogging._logger.LogError(">>> Entering bind()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
         tr
         |> Task.bind (
             Result.either
@@ -19,16 +23,22 @@ module TaskResult =
         )
 
     let inline ofAsync aAsync =
+        LogRiteLogging._logger.LogError(">>> Entering ofAsync(aAsync={AAsync})", aAsync)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ofAsync(aAsync={AAsync})", aAsync)
         aAsync
         |> Async.Catch
         |> Async.StartImmediateAsTask
         |> Task.map Result.ofChoice
 
     let inline ok x =
+        LogRiteLogging._logger.LogError(">>> Entering ok(x={X})", x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ok(x={X})", x)
         Ok x
         |> Task.singleton
 
     let inline error x =
+        LogRiteLogging._logger.LogError(">>> Entering error(x={X})", x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting error(x={X})", x)
         Error x
         |> Task.singleton
 
@@ -58,6 +68,8 @@ module TaskResult =
     /// The result if the result is Ok, else returns <paramref name="ifError"/>.
     /// </returns>
     let inline orElse (ifError: Task<Result<'ok, 'error2>>) (result: Task<Result<'ok, 'error>>) =
+        LogRiteLogging._logger.LogError(">>> Entering orElse(ifError={IfError})", ifError)
+        LogRiteLogging._logger.LogWarning("<<< Exiting orElse(ifError={IfError})", ifError)
         result
         |> Task.bind (Result.either ok (fun _ -> ifError))
 
@@ -89,152 +101,208 @@ module TaskResult =
 
     /// Replaces the wrapped value with unit
     let inline ignore<'ok, 'error> (tr: Task<Result<'ok, 'error>>) =
+        LogRiteLogging._logger.LogError(">>> Entering ignore(tr={Tr})", tr)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ignore(tr={Tr})", tr)
         tr
         |> map ignore<'ok>
 
     /// Returns the specified error if the task-wrapped value is false.
     let inline requireTrue error value =
+        LogRiteLogging._logger.LogError(">>> Entering requireTrue(error={Error},value={Value})", error, value)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireTrue(error={Error},value={Value})", error, value)
         value
         |> Task.map (Result.requireTrue error)
 
     /// Returns the specified error if the task-wrapped value is true.
     let inline requireFalse error value =
+        LogRiteLogging._logger.LogError(">>> Entering requireFalse(error={Error},value={Value})", error, value)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireFalse(error={Error},value={Value})", error, value)
         value
         |> Task.map (Result.requireFalse error)
 
     // Converts an task-wrapped Option to a Result, using the given error if None.
     let inline requireSome error option =
+        LogRiteLogging._logger.LogError(">>> Entering requireSome(error={Error},option={Option})", error, option)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireSome(error={Error},option={Option})", error, option)
         option
         |> Task.map (Result.requireSome error)
 
     // Converts an task-wrapped Option to a Result, using the given error factory if None.
     let inline requireSomeWith ([<InlineIfLambda>] errorFactory: unit -> 'error) option =
+        LogRiteLogging._logger.LogError(">>> Entering requireSomeWith()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireSomeWith()")
         option
         |> Task.map (Result.requireSomeWith errorFactory)
 
     // Converts an task-wrapped Option to a Result, using the given error if Some.
     let inline requireNone error option =
+        LogRiteLogging._logger.LogError(">>> Entering requireNone(error={Error},option={Option})", error, option)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireNone(error={Error},option={Option})", error, option)
         option
         |> Task.map (Result.requireNone error)
 
     // Converts an task-wrapped Option to a Result, using the given error factory if Some.
     let inline requireNoneWith ([<InlineIfLambda>] errorFactory: unit -> 'error) option =
+        LogRiteLogging._logger.LogError(">>> Entering requireNoneWith()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireNoneWith()")
         option
         |> Task.map (Result.requireNoneWith errorFactory)
 
     // Converts an task-wrapped ValueOption to a Result, using the given error if ValueNone.
     let inline requireValueSome error voption =
+        LogRiteLogging._logger.LogError(">>> Entering requireValueSome(error={Error},voption={Voption})", error, voption)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireValueSome(error={Error},voption={Voption})", error, voption)
         voption
         |> Task.map (Result.requireValueSome error)
 
     // Converts an task-wrapped ValueOption to a Result, using the given error if ValueSome.
     let inline requireValueNone error voption =
+        LogRiteLogging._logger.LogError(">>> Entering requireValueNone(error={Error},voption={Voption})", error, voption)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireValueNone(error={Error},voption={Voption})", error, voption)
         voption
         |> Task.map (Result.requireValueNone error)
 
     /// Returns Ok if the task-wrapped value and the provided value are equal, or the specified error if not.
     let inline requireEqual x1 x2 error =
+        LogRiteLogging._logger.LogError(">>> Entering requireEqual(x1={X1},x2={X2},error={Error})", x1, x2, error)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireEqual(x1={X1},x2={X2},error={Error})", x1, x2, error)
         x2
         |> Task.map (fun x2' -> Result.requireEqual x1 x2' error)
 
     /// Returns Ok if the two values are equal, or the specified error if not.
     let inline requireEqualTo other error this =
+        LogRiteLogging._logger.LogError(">>> Entering requireEqualTo(other={Other},error={Error},this={This})", other, error, this)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireEqualTo(other={Other},error={Error},this={This})", other, error, this)
         this
         |> Task.map (Result.requireEqualTo other error)
 
     /// Returns Ok if the task-wrapped sequence is empty, or the specified error if not.
     let inline requireEmpty error xs =
+        LogRiteLogging._logger.LogError(">>> Entering requireEmpty(error={Error},xs={Xs})", error, xs)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireEmpty(error={Error},xs={Xs})", error, xs)
         xs
         |> Task.map (Result.requireEmpty error)
 
     /// Returns Ok if the task-wrapped sequence is not-empty, or the specified error if not.
     let inline requireNotEmpty error xs =
+        LogRiteLogging._logger.LogError(">>> Entering requireNotEmpty(error={Error},xs={Xs})", error, xs)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireNotEmpty(error={Error},xs={Xs})", error, xs)
         xs
         |> Task.map (Result.requireNotEmpty error)
 
     /// Returns the first item of the task-wrapped sequence if it exists, or the specified
     /// error if the sequence is empty
     let inline requireHead error xs =
+        LogRiteLogging._logger.LogError(">>> Entering requireHead(error={Error},xs={Xs})", error, xs)
+        LogRiteLogging._logger.LogWarning("<<< Exiting requireHead(error={Error},xs={Xs})", error, xs)
         xs
         |> Task.map (Result.requireHead error)
 
     /// Returns the task-wrapped result if it is Ok and the predicate is true, or if the task-wrapped result is Error.
     /// If the predicate is false, returns a new task-wrapped Error result with the error value.
     let inline require predicate error result =
+        LogRiteLogging._logger.LogError(">>> Entering require(predicate={Predicate},error={Error},result={Result})", predicate, error, result)
+        LogRiteLogging._logger.LogWarning("<<< Exiting require(predicate={Predicate},error={Error},result={Result})", predicate, error, result)
         result
         |> Task.map (Result.require predicate error)
 
     /// Replaces an error value of an task-wrapped result with a custom error
     /// value.
     let inline setError error taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering setError(error={Error},taskResult={TaskResult})", error, taskResult)
+        LogRiteLogging._logger.LogWarning("<<< Exiting setError(error={Error},taskResult={TaskResult})", error, taskResult)
         taskResult
         |> Task.map (Result.setError error)
 
     /// Replaces a unit error value of an task-wrapped result with a custom
     /// error value. Safer than setError since you're not losing any information.
     let inline withError error taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering withError(error={Error},taskResult={TaskResult})", error, taskResult)
+        LogRiteLogging._logger.LogWarning("<<< Exiting withError(error={Error},taskResult={TaskResult})", error, taskResult)
         taskResult
         |> Task.map (Result.withError error)
 
     /// Extracts the contained value of an task-wrapped result if Ok, otherwise
     /// uses ifError.
     let inline defaultValue ifError taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering defaultValue(ifError={IfError},taskResult={TaskResult})", ifError, taskResult)
+        LogRiteLogging._logger.LogWarning("<<< Exiting defaultValue(ifError={IfError},taskResult={TaskResult})", ifError, taskResult)
         taskResult
         |> Task.map (Result.defaultValue ifError)
 
     /// Extracts the contained value of an task-wrapped result if Error, otherwise
     /// uses ifOk.
     let inline defaultError ifOk taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering defaultError(ifOk={IfOk},taskResult={TaskResult})", ifOk, taskResult)
+        LogRiteLogging._logger.LogWarning("<<< Exiting defaultError(ifOk={IfOk},taskResult={TaskResult})", ifOk, taskResult)
         taskResult
         |> Task.map (Result.defaultError ifOk)
 
     /// Extracts the contained value of an task-wrapped result if Ok, otherwise
     /// evaluates ifErrorThunk and uses the result.
     let inline defaultWith ifErrorThunk taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering defaultWith(ifErrorThunk={IfErrorThunk},taskResult={TaskResult})", ifErrorThunk, taskResult)
+        LogRiteLogging._logger.LogWarning("<<< Exiting defaultWith(ifErrorThunk={IfErrorThunk},taskResult={TaskResult})", ifErrorThunk, taskResult)
         taskResult
         |> Task.map (Result.defaultWith ifErrorThunk)
 
     /// Same as defaultValue for a result where the Ok value is unit. The name
     /// describes better what is actually happening in this case.
     let inline ignoreError<'error> (taskResult: Task<Result<unit, 'error>>) =
+        LogRiteLogging._logger.LogError(">>> Entering ignoreError(taskResult={TaskResult})", taskResult)
         defaultValue () taskResult
 
     /// If the task-wrapped result is Ok, executes the function on the Ok value.
     /// Passes through the input value.
     let inline tee ([<InlineIfLambda>] f) taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering tee()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting tee()")
         taskResult
         |> Task.map (Result.tee f)
 
     /// If the task-wrapped result is Ok and the predicate returns true, executes
     /// the function on the Ok value. Passes through the input value.
     let inline teeIf ([<InlineIfLambda>] predicate) ([<InlineIfLambda>] f) taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering teeIf()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting teeIf()")
         taskResult
         |> Task.map (Result.teeIf predicate f)
 
     /// If the task-wrapped result is Error, executes the function on the Error
     /// value. Passes through the input value.
     let inline teeError ([<InlineIfLambda>] f) taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering teeError()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting teeError()")
         taskResult
         |> Task.map (Result.teeError f)
 
     /// If the task-wrapped result is Error and the predicate returns true,
     /// executes the function on the Error value. Passes through the input value.
     let inline teeErrorIf predicate ([<InlineIfLambda>] f) taskResult =
+        LogRiteLogging._logger.LogError(">>> Entering teeErrorIf(predicate={Predicate})", predicate)
+        LogRiteLogging._logger.LogWarning("<<< Exiting teeErrorIf(predicate={Predicate})", predicate)
         taskResult
         |> Task.map (Result.teeErrorIf predicate f)
 
     /// Takes two results and returns a tuple of the pair
     let inline zip x1 x2 =
+        LogRiteLogging._logger.LogError(">>> Entering zip(x1={X1},x2={X2})", x1, x2)
+        LogRiteLogging._logger.LogWarning("<<< Exiting zip(x1={X1},x2={X2})", x1, x2)
         Task.zip x1 x2
         |> Task.map (fun (r1, r2) -> Result.zip r1 r2)
 
     /// Takes two results and returns a tuple of the error pair
     let inline zipError x1 x2 =
+        LogRiteLogging._logger.LogError(">>> Entering zipError(x1={X1},x2={X2})", x1, x2)
+        LogRiteLogging._logger.LogWarning("<<< Exiting zipError(x1={X1},x2={X2})", x1, x2)
         Task.zip x1 x2
         |> Task.map (fun (r1, r2) -> Result.zipError r1 r2)
 
     /// Catches exceptions and maps them to the Error case using the provided function.
     let inline catch ([<InlineIfLambda>] f) x =
+        LogRiteLogging._logger.LogError(">>> Entering catch()")
+        LogRiteLogging._logger.LogError("Exception in catch(): {Arg0}", ex.Message)
+        LogRiteLogging._logger.LogWarning("<<< Exiting catch()")
         x
         |> Task.catch
         |> Task.map (
@@ -252,6 +320,8 @@ module TaskResult =
     /// <param name="x">The task to lift.</param>
     /// <returns>A task containing <c>Ok</c> of the task's result value.</returns>
     let inline ofTask x =
+        LogRiteLogging._logger.LogError(">>> Entering ofTask(x={X})", x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ofTask(x={X})", x)
         x
         |> Task.map Ok
 
@@ -281,11 +351,13 @@ module TaskResult =
 
     /// Lift Result to TaskResult
     let inline ofResult (x: Result<_, _>) =
+        LogRiteLogging._logger.LogError(">>> Entering ofResult(x={X})", x)
         x
         |> Task.singleton
 
     /// Bind the TaskResult and requireSome on the inner option value.
     let inline bindRequireSome error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireSome(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireSome error
@@ -294,6 +366,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireNone on the inner option value.
     let inline bindRequireNone error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireNone(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireNone error
@@ -302,6 +375,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireValueSome on the inner voption value.
     let inline bindRequireValueSome error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireValueSome(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireValueSome error
@@ -310,6 +384,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireValueNone on the inner voption value.
     let inline bindRequireValueNone error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireValueNone(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireValueNone error
@@ -318,6 +393,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireTrue on the inner value.
     let inline bindRequireTrue error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireTrue(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireTrue error
@@ -326,6 +402,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireFalse on the inner value.
     let inline bindRequireFalse error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireFalse(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireFalse error
@@ -334,6 +411,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireNotNull on the inner value.
     let inline bindRequireNotNull error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireNotNull(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireNotNull error
@@ -342,14 +420,17 @@ module TaskResult =
 
     /// Bind the TaskResult and requireEequal on the inner value.
     let inline bindRequireEqual y error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireEqual(y={Y},error={Error},x={X})", y, error, x)
         x
         |> bind (fun x ->
+            LogRiteLogging._logger.LogWarning("<<< Exiting bindRequireEqual(y={Y},error={Error},x={X})", y, error, x)
             Result.requireEqual x y error
             |> Task.singleton
         )
 
     /// Bind the TaskResult and requireEmpty on the inner value.
     let inline bindRequireEmpty error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireEmpty(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireEmpty error
@@ -358,6 +439,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireNotEmpty on the inner value.
     let inline bindRequireNotEmpty error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireNotEmpty(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireNotEmpty error
@@ -366,6 +448,7 @@ module TaskResult =
 
     /// Bind the TaskResult and requireHead on the inner value
     let inline bindRequireHead error x =
+        LogRiteLogging._logger.LogError(">>> Entering bindRequireHead(error={Error},x={X})", error, x)
         x
         |> bind (
             Result.requireHead error
@@ -382,8 +465,10 @@ module TaskResult =
     /// Returns the task-wrapped result if it is Ok and the checkFunc returns an task-wrapped Ok result or if the task-wrapped result is Error.
     /// If the checkFunc returns an task-wrapped Error result, returns the task-wrapped Error result.
     let inline check ([<InlineIfLambda>] checkFunc) (result) =
+        LogRiteLogging._logger.LogError(">>> Entering check()")
         result
         |> bind (fun o ->
+            LogRiteLogging._logger.LogWarning("<<< Exiting check()")
             checkFunc o
             |> map (fun _ -> o)
         )

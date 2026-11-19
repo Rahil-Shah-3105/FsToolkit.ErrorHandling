@@ -1,4 +1,6 @@
-﻿namespace FsToolkit.ErrorHandling
+﻿open Microsoft.Extensions.Logging
+namespace FsToolkit.ErrorHandling
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 
 /// Contains methods to build CancellableTasks using the F# computation expression syntax
 [<AutoOpen>]
@@ -42,6 +44,7 @@ module CancellableTaskOptionCE =
             let resumptionInfo =
                 { new CancellableTaskOptionBuilderBaseResumptionDynamicInfo<'T>(initialResumptionFunc) with
                     member info.MoveNext(sm) =
+                        LogRiteLogging._logger.LogError(">>> Entering MoveNext(sm={Sm})", sm)
                         let mutable savedExn = null
 
                         try
@@ -49,10 +52,12 @@ module CancellableTaskOptionCE =
                             let step = info.ResumptionFunc.Invoke(&sm)
 
                             if step then
+                                LogRiteLogging._logger.LogError("MoveNext(sm={Sm}): step → {Step}", sm, step)
                                 sm.Data.SetResult()
                             else
                                 match sm.ResumptionDynamicInfo.ResumptionData with
                                 | :? ICriticalNotifyCompletion as awaiter ->
+                                    LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, awaiter.Message)
                                     let mutable awaiter = awaiter
 
                                     MethodBuilder.AwaitUnsafeOnCompleted(
@@ -63,6 +68,7 @@ module CancellableTaskOptionCE =
                                 | awaiter -> assert not (isNull awaiter)
 
                         with exn ->
+                            LogRiteLogging._logger.LogError("Exception in MoveNext(sm={Sm}): {Arg1}", sm, exn.Message)
                             savedExn <- exn
                         // Run SetException outside the stack unwind, see https://github.com/dotnet/roslyn/issues/26567
                         match savedExn with
@@ -70,6 +76,7 @@ module CancellableTaskOptionCE =
                         | exn -> MethodBuilder.SetException(&sm.Data.MethodBuilder, exn)
 
                     member _.SetStateMachine(sm, state) =
+                        LogRiteLogging._logger.LogError(">>> Entering SetStateMachine(sm={Sm},state={State})", sm, state)
                         MethodBuilder.SetStateMachine(&sm.Data.MethodBuilder, state)
                 }
 
@@ -288,6 +295,7 @@ module CancellableTaskOption =
     /// followed by "Tasks Finished".
     /// </example>
     let inline getCancellationToken () =
+        LogRiteLogging._logger.LogError(">>> Entering getCancellationToken()")
         fun (ct: CancellationToken) -> ValueTask<CancellationToken> ct
 
     /// <summary>Lifts an item to a CancellableTask.</summary>

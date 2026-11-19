@@ -2,7 +2,9 @@ namespace FsToolkit.ErrorHandling
 
 open System.Threading.Tasks
 open System
+open Microsoft.Extensions.Logging
 
+module internal LogRiteLogging = begin let _logger : Microsoft.Extensions.Logging.ILogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance end
 [<AutoOpen>]
 module AsyncOptionCE =
     type AsyncOptionBuilder() =
@@ -12,6 +14,7 @@ module AsyncOptionCE =
         member inline _.ReturnFrom(value: Async<'value option>) : Async<'value option> = value
 
         member inline _.Zero() : Async<unit option> =
+            LogRiteLogging._logger.LogError(">>> Entering Zero()")
             Some()
             |> async.Return
 
