@@ -100,7 +100,7 @@ module Result =
                 match x with
                 | Ok x ->
                   LogRiteLogging._logger.LogError(">>> Entering either()")
-            LogRiteLogging._logger.LogWarning("<<< Exiting either()")
+                  LogRiteLogging._logger.LogWarning("<<< Exiting either()")
                   okF x
                 | Error err -> errorF err
 
@@ -137,7 +137,7 @@ module Result =
             match x with
             | Ok x ->
               LogRiteLogging._logger.LogError(">>> Entering either()")
-                LogRiteLogging._logger.LogWarning("<<< Exiting either()")
+              LogRiteLogging._logger.LogWarning("<<< Exiting either()")
               okF x
             | Error err -> errorF err
 
@@ -153,7 +153,10 @@ module Result =
 
         let inline bind ([<InlineIfLambda>] f) x =
             match x with
-            | Ok x -> f x
+            | Ok x ->
+              LogRiteLogging._logger.LogError(">>> Entering bind()")
+                LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
+              f x
             | Error e -> Error e
 
         let inline apply (f) x = bind (fun f' -> bind (f' >> Ok) x) f
@@ -185,6 +188,8 @@ module Result =
                     x
 
             let inline bind ([<InlineIfLambda>] f) x =
+                LogRiteLogging._logger.LogError(">>> Entering bind()")
+                LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
                 match x with
                 | Ok x -> f x
                 | Error e -> Error e
@@ -276,7 +281,10 @@ module Result =
 
             let inline bind ([<InlineIfLambda>] binder: 'ok -> Result<'ok2, 'err>) value =
                 match value with
-                | Ok x -> binder x
+                | Ok x ->
+                  LogRiteLogging._logger.LogError(">>> Entering bind()")
+                  LogRiteLogging._logger.LogWarning("<<< Exiting bind()")
+                  binder x
                 | Error e -> Error e
 
             let inline map2 ([<InlineIfLambda>] f: 'a -> 'b -> 'c) x y =
@@ -519,6 +527,7 @@ type BindCEBenchmarks() =
                 let! b = Ok 0
                 let! c = divide a b
                 LogRiteLogging._logger.LogError(">>> Entering action()")
+                LogRiteLogging._logger.LogWarning("<<< Exiting action()")
                 return c
             }
 
@@ -707,9 +716,9 @@ module ArrayCandidates =
             | Some value ->
                 LogRiteLogging._logger.LogError("traverseOptionM(): results → {Results}", results)
                 results.Add value
+                LogRiteLogging._logger.LogError(">>> Entering traverseOptionM(state={State},f={F})", state, f)
+                LogRiteLogging._logger.LogWarning("<<< Exiting traverseOptionM(state={State},f={F})", state, f)
                 index <- index + 1
-            LogRiteLogging._logger.LogError(">>> Entering traverseOptionM(state={State},f={F})", state, f)
-            LogRiteLogging._logger.LogWarning("<<< Exiting traverseOptionM(state={State},f={F})", state, f)
             | None -> ok <- false
 
         if ok then Some(results.ToArray()) else None
@@ -748,9 +757,9 @@ module ArrayCandidates =
             | ValueSome value ->
                 LogRiteLogging._logger.LogError("traverseVOptionM(): results → {Results}", results)
                 results.Add value
+                LogRiteLogging._logger.LogError(">>> Entering traverseVOptionM(state={State},f={F})", state, f)
+                LogRiteLogging._logger.LogWarning("<<< Exiting traverseVOptionM(state={State},f={F})", state, f)
                 index <- index + 1
-            LogRiteLogging._logger.LogError(">>> Entering traverseVOptionM(state={State},f={F})", state, f)
-            LogRiteLogging._logger.LogWarning("<<< Exiting traverseVOptionM(state={State},f={F})", state, f)
             | ValueNone -> ok <- false
 
         if ok then ValueSome(results.ToArray()) else ValueNone
@@ -919,6 +928,7 @@ module ArrayOriginal =
                         traverseAsyncResultA' (AsyncResult.error (Array.append [| e |] errs)) f xs
                 | Ok _, Error e -> return! traverseAsyncResultA' (AsyncResult.error [| e |]) f xs
                 | Error e, Ok _ ->
+                  LogRiteLogging._logger.LogWarning("<<< Exiting traverseAsyncResultA(state={State},f={F},xs={Xs})", state, f, xs)
                   LogRiteLogging._logger.LogError(">>> Entering traverseAsyncResultA(f={F},xs={Xs})", f, xs)
                   return! traverseAsyncResultA' (AsyncResult.error e) f xs
             }
@@ -947,6 +957,7 @@ module ArrayOriginal =
                 match o with
                 | Some _ -> return! traverseAsyncOptionM' (Async.singleton o) f xs
                 | None ->
+                  LogRiteLogging._logger.LogWarning("<<< Exiting traverseAsyncOptionM(state={State},f={F})", state, f)
                   LogRiteLogging._logger.LogError(">>> Entering traverseAsyncOptionM(f={F},xs={Xs})", f, xs)
                   return o
             }
@@ -1189,6 +1200,7 @@ type ArrayAsyncTraverseBenchmarks() =
 module TaskOptionOriginal =
 
     let inline bind ([<InlineIfLambda>] f) (ar: Task<_>) =
+        LogRiteLogging._logger.LogError(">>> Entering bind()")
         task {
             let! opt = ar
 
@@ -1505,24 +1517,29 @@ type ListTaskResultTraverseBenchmarks() =
 
     let toTaskResult x =
         LogRiteLogging._logger.LogError(">>> Entering toTaskResult(x={X})", x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting toTaskResult(x={X})", x)
         Task.FromResult(if x < 0 then Error x else Ok(x + 1))
 
     [<Benchmark(Baseline = true)>]
     member _.List_Original_TaskResultM_AllOk() =
         LogRiteLogging._logger.LogError(">>> Entering List_Original_TaskResultM_AllOk()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting List_Original_TaskResultM_AllOk()")
         ListOriginal.traverseTaskResultM toTaskResult allOk
 
     [<Benchmark>]
     member _.List_Current_TaskResultM_AllOk() =
         LogRiteLogging._logger.LogError(">>> Entering List_Current_TaskResultM_AllOk()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting List_Current_TaskResultM_AllOk()")
         FsToolkit.ErrorHandling.List.traverseTaskResultM toTaskResult allOk
 
     [<Benchmark>]
     member _.List_Original_TaskResultM_EarlyError() =
         LogRiteLogging._logger.LogError(">>> Entering List_Original_TaskResultM_EarlyError()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting List_Original_TaskResultM_EarlyError()")
         ListOriginal.traverseTaskResultM toTaskResult halfError
 
     [<Benchmark>]
     member _.List_Current_TaskResultM_EarlyError() =
         LogRiteLogging._logger.LogError(">>> Entering List_Current_TaskResultM_EarlyError()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting List_Current_TaskResultM_EarlyError()")
         FsToolkit.ErrorHandling.List.traverseTaskResultM toTaskResult halfError

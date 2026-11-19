@@ -32,6 +32,7 @@ module ValueTaskValueOption =
 
     let inline apply f x =
         LogRiteLogging._logger.LogError(">>> Entering apply(f={F},x={X})", f, x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting apply(f={F},x={X})", f, x)
         bind (fun f' -> bind (fun x' -> valueSome (f' x')) x) f
 
     let inline zip (x1: ValueTask<'a voption>) (x2: ValueTask<'b voption>) =

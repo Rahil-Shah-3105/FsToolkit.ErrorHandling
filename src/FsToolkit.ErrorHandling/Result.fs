@@ -208,6 +208,7 @@ module Result =
         let tryCreate' x =
             LogRiteLogging._logger.LogError(">>> Entering tryCreate(fieldName={FieldName})", fieldName)
             LogRiteLogging._logger.LogError(">>> Entering tryCreate(x={X})", x)
+            LogRiteLogging._logger.LogWarning("<<< Exiting tryCreate(x={X})", x)
             (^b: (static member TryCreate: 'a -> Result< ^b, 'c >) x)
 
         tryCreate' x

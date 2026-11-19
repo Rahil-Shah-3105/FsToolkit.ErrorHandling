@@ -12,10 +12,12 @@ module Operators =
 
     let inline bindM builder m ([<InlineIfLambda>] f) =
         LogRiteLogging._logger.LogError(">>> Entering bindM(builder={Builder},m={M})", builder, m)
+        LogRiteLogging._logger.LogWarning("<<< Exiting bindM(builder={Builder},m={M})", builder, m)
         (^M: (member Bind: 'd -> ('e -> 'c) -> 'c) (builder, m, f))
 
     let inline bind2M builder m1 m2 f =
         LogRiteLogging._logger.LogError(">>> Entering bind2M(builder={Builder},m1={M1},m2={M2},f={F})", builder, m1, m2, f)
+        LogRiteLogging._logger.LogWarning("<<< Exiting bind2M(builder={Builder},m1={M1},m2={M2},f={F})", builder, m1, m2, f)
         (^M: (member Bind2: 'a -> 'b -> ('e * 'f -> 'c) -> 'c) (builder, m1, m2, f))
 
     let inline delayM builder x =
@@ -191,6 +193,7 @@ module AsyncResult =
                 + y
                 + z
                 LogRiteLogging._logger.LogError(">>> Entering bind(f={F},x={X})", f, x)
+                LogRiteLogging._logger.LogWarning("<<< Exiting example()")
                 + a
         }
 

@@ -34,6 +34,7 @@ module ResultOptionCE =
 
         member inline _.Delay([<InlineIfLambda>] delayer: unit -> Result<'ok option, 'error>) =
             LogRiteLogging._logger.LogError(">>> Entering Delay()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting Delay()")
             delayer
 
         member inline _.Run

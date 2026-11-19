@@ -57,6 +57,7 @@ module CancellableTaskOptionBuilderBase =
         /// <exception cref="T:System.ObjectDisposedException">The associated <see cref="T:System.Threading.CancellationTokenSource" /> has been disposed.</exception>
         member inline this.ThrowIfCancellationRequested() =
             LogRiteLogging._logger.LogError(">>> Entering ThrowIfCancellationRequested()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting ThrowIfCancellationRequested()")
             this.CancellationToken.ThrowIfCancellationRequested()
 
     and AsyncTaskOptionMethodBuilder<'TOverall> = AsyncTaskMethodBuilder<'TOverall option>

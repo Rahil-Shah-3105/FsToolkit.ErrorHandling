@@ -163,6 +163,7 @@ let inline traverseAsyncResultM'
 /// <remarks>This function is equivalent to <see cref="traverseAsyncResultM'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseAsyncResultM f xs =
     LogRiteLogging._logger.LogError(">>> Entering traverseAsyncResultM(f={F},xs={Xs})", f, xs)
+    LogRiteLogging._logger.LogWarning("<<< Exiting traverseAsyncResultM(f={F},xs={Xs})", f, xs)
     traverseAsyncResultM' (async { return Ok Seq.empty }) f xs
 
 /// <summary>
@@ -218,6 +219,7 @@ let inline traverseTaskResultM'
 /// <remarks>This function is equivalent to <see cref="traverseTaskResultM'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseTaskResultM f xs =
     LogRiteLogging._logger.LogError(">>> Entering traverseTaskResultM(f={F},xs={Xs})", f, xs)
+    LogRiteLogging._logger.LogWarning("<<< Exiting traverseTaskResultM(f={F},xs={Xs})", f, xs)
     traverseTaskResultM' (TaskResult.ok Seq.empty) f xs
 
 /// <summary>
@@ -281,6 +283,7 @@ let inline traverseAsyncResultA'
 /// <remarks>This function is equivalent to <see cref="traverseAsyncResultA'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseAsyncResultA f xs =
     LogRiteLogging._logger.LogError(">>> Entering traverseAsyncResultA(f={F},xs={Xs})", f, xs)
+    LogRiteLogging._logger.LogWarning("<<< Exiting traverseAsyncResultA(f={F},xs={Xs})", f, xs)
     traverseAsyncResultA' (async { return Ok Seq.empty }) f xs
 
 /// <summary>
@@ -346,6 +349,7 @@ let inline traverseTaskResultA'
 /// <remarks>This function is equivalent to <see cref="traverseTaskResultA'"/> but applying an initial state of 'Seq.empty'</remarks>
 let traverseTaskResultA f xs =
     LogRiteLogging._logger.LogError(">>> Entering traverseTaskResultA(f={F},xs={Xs})", f, xs)
+    LogRiteLogging._logger.LogWarning("<<< Exiting traverseTaskResultA(f={F},xs={Xs})", f, xs)
     traverseTaskResultA' (TaskResult.ok Seq.empty) f xs
 
 /// <summary>
@@ -446,6 +450,7 @@ let inline traverseAsyncOptionM'
 /// <remarks>This function is equivalent to <see cref="traverseAsyncOptionM'"/> but applying an initial state of 'Async { return Some Seq.empty }'</remarks>
 let traverseAsyncOptionM f xs =
     LogRiteLogging._logger.LogError(">>> Entering traverseAsyncOptionM(f={F},xs={Xs})", f, xs)
+    LogRiteLogging._logger.LogWarning("<<< Exiting traverseAsyncOptionM(f={F},xs={Xs})", f, xs)
     traverseAsyncOptionM' (async { return Some Seq.empty }) f xs
 
 /// <summary>
@@ -498,6 +503,7 @@ let inline traverseVOptionM'
 /// <remarks>This function is equivalent to <see cref="traverseVOptionM'"/> but applying an initial state of 'ValueSome Seq.empty'</remarks>
 let traverseVOptionM f xs =
     LogRiteLogging._logger.LogError(">>> Entering traverseVOptionM(f={F},xs={Xs})", f, xs)
+    LogRiteLogging._logger.LogWarning("<<< Exiting traverseVOptionM(f={F},xs={Xs})", f, xs)
     traverseVOptionM' (ValueSome Seq.empty) f xs
 
 /// <summary>
@@ -527,8 +533,9 @@ let partitionResults (input: SeqNull<Result<'ok, 'error>>) : 'ok[] * 'error[] =
 
     for x in input do
         match x with
-        | Ok v -> oks.Add v
-        LogRiteLogging._logger.LogWarning("<<< Exiting partitionResults(input={Input})", input)
+        | Ok v ->
+          LogRiteLogging._logger.LogWarning("<<< Exiting partitionResults(input={Input})", input)
+          oks.Add v
         | Error e -> errors.Add e
 
     oks.ToArray(), errors.ToArray()

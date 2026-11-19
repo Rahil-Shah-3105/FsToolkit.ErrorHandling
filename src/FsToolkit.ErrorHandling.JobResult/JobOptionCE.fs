@@ -45,6 +45,7 @@ module JobOptionCE =
 
         member inline _.Delay([<InlineIfLambda>] generator: unit -> Job<_ option>) : Job<_ option> =
             LogRiteLogging._logger.LogError(">>> Entering Delay()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting Delay()")
             Job.delay generator
 
         member inline this.Combine
