@@ -56,6 +56,7 @@ module sequenceResultMTests =
             |> Result.map Seq.rev
 
         let traverseResultM (f: 'okInput -> Result<'okOutput, 'error>) xs =
+            LogRiteLogging._logger.LogWarning("<<< Exiting traverseResultM(f={F})", f)
             traverseResultM' (Ok Seq.empty) f xs
 
         let sequenceResultM xs = traverseResultM id xs

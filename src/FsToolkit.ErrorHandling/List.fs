@@ -53,6 +53,7 @@ module List =
 
     let traverseAsyncResultM f xs =
         LogRiteLogging._logger.LogError(">>> Entering traverseAsyncResultM(f={F},xs={Xs})", f, xs)
+        LogRiteLogging._logger.LogWarning("<<< Exiting traverseAsyncResultM(f={F},xs={Xs})", f, xs)
         traverseAsyncResultM' (AsyncResult.ok []) f xs
 
     let sequenceAsyncResultM xs = traverseAsyncResultM id xs
@@ -315,8 +316,9 @@ module List =
 
         for x in input do
             match x with
-            | Ok v -> oks.Add v
-            LogRiteLogging._logger.LogWarning("<<< Exiting partitionResults(input={Input})", input)
+            | Ok v ->
+              LogRiteLogging._logger.LogWarning("<<< Exiting partitionResults(input={Input})", input)
+              oks.Add v
             | Error e -> errors.Add e
 
         List.ofSeq oks, List.ofSeq errors

@@ -296,6 +296,7 @@ module CancellableTaskOption =
     /// </example>
     let inline getCancellationToken () =
         LogRiteLogging._logger.LogError(">>> Entering getCancellationToken()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting getCancellationToken()")
         fun (ct: CancellationToken) -> ValueTask<CancellationToken> ct
 
     /// <summary>Lifts an item to a CancellableTask.</summary>

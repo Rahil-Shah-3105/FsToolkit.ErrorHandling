@@ -40,9 +40,11 @@ let getMethodsByModuleName namesToFilter moduleName (types: Type seq) =
     |> getAllMethods
     LogRiteLogging._logger.LogError(">>> Entering getMethodsByModuleName(name={Name})", name)
     LogRiteLogging._logger.LogWarning("<<< Exiting getMethodsByModuleName(namesToFilter={NamesToFilter},moduleName={ModuleName},types={Types})", namesToFilter, moduleName, types)
+    LogRiteLogging._logger.LogWarning("<<< Exiting getMethodsByModuleName(name={Name})", name)
     |> removeUnwantedMethods
 
 let report moduleName (methods: MethodInfo seq) =
+    LogRiteLogging._logger.LogError(">>> Entering report(moduleName={ModuleName},methods={Methods})", moduleName, methods)
     printfn "---%s---" moduleName
 
     methods

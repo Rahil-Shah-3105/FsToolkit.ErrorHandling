@@ -129,6 +129,7 @@ module AsyncResultOptionCEExtensions =
         /// </summary>
         member inline this.Source(result: Choice<'ok, 'error>) : AsyncResultOption<'ok, 'error> =
             LogRiteLogging._logger.LogError(">>> Entering Source(result={Result})", result)
+            LogRiteLogging._logger.LogWarning("<<< Exiting Source(result={Result})", result)
             this.Source(Result.ofChoice result)
 
         /// <summary>

@@ -24,6 +24,7 @@ module JobResult =
 
     let inline eitherMap ([<InlineIfLambda>] onSuccess) ([<InlineIfLambda>] onError) jr =
         LogRiteLogging._logger.LogError(">>> Entering eitherMap()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting eitherMap()")
         Job.map (Result.eitherMap onSuccess onError) jr
 
     let inline ofAsync aAsync =
@@ -262,6 +263,7 @@ module JobResult =
     /// describes better what is actually happening in this case.
     let inline ignoreError<'error> (jobResult: Job<Result<unit, 'error>>) =
         LogRiteLogging._logger.LogError(">>> Entering ignoreError(jobResult={JobResult})", jobResult)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ignoreError(jobResult={JobResult})", jobResult)
         defaultValue () jobResult
 
     /// If the job-wrapped result is Ok, executes the function on the Ok value.

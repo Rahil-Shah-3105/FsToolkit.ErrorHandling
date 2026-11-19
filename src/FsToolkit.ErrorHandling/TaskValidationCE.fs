@@ -52,6 +52,7 @@ type TaskValidationBuilderBase() =
     [<DefaultValue>]
     member inline _.Zero<'TOverall, 'Error>() : TaskValidationCode<'TOverall, 'Error, unit> =
         LogRiteLogging._logger.LogError(">>> Entering Zero()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting Zero()")
         ResumableCode.Zero()
 
     member inline _.Return(value: 'T) : TaskValidationCode<'T, 'Error, 'T> =

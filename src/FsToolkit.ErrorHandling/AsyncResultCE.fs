@@ -114,6 +114,7 @@ module AsyncResultCE =
         /// </summary>
         member inline _.Source(result: Async<Result<'ok, 'error>>) : Async<Result<'ok, 'error>> =
             LogRiteLogging._logger.LogError(">>> Entering Source(result={Result})", result)
+            LogRiteLogging._logger.LogWarning("<<< Exiting Source(result={Result})", result)
             result
 
 

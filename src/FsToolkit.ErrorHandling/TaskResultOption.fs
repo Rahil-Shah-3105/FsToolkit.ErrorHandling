@@ -22,10 +22,12 @@ module TaskResultOption =
 
     let inline map2 ([<InlineIfLambda>] f) xTRO yTRO =
         LogRiteLogging._logger.LogError(">>> Entering map2()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting map2()")
         TaskResult.map2 (Option.map2 f) xTRO yTRO
 
     let inline map3 ([<InlineIfLambda>] f) xTRO yTRO zTRO =
         LogRiteLogging._logger.LogError(">>> Entering map3()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting map3()")
         TaskResult.map3 (Option.map3 f) xTRO yTRO zTRO
 
     let inline singleton value = TaskResult.ok (Some value)

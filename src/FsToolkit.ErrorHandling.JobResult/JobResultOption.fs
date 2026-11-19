@@ -20,10 +20,12 @@ module JobResultOption =
 
     let inline map2 ([<InlineIfLambda>] f) xJRO yJRO =
         LogRiteLogging._logger.LogError(">>> Entering map2()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting map2()")
         JobResult.map2 (Option.map2 f) xJRO yJRO
 
     let inline map3 ([<InlineIfLambda>] f) xJRO yJRO zJRO =
         LogRiteLogging._logger.LogError(">>> Entering map3()")
+        LogRiteLogging._logger.LogWarning("<<< Exiting map3()")
         JobResult.map3 (Option.map3 f) xJRO yJRO zJRO
 
     let inline singleton value =

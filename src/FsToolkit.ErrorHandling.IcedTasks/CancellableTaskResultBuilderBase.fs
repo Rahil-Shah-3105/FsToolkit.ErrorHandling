@@ -42,6 +42,7 @@ module CancellableTaskResultBuilderBase =
         /// <exception cref="T:System.ObjectDisposedException">The associated <see cref="T:System.Threading.CancellationTokenSource" /> has been disposed.</exception>
         member inline this.ThrowIfCancellationRequested() =
             LogRiteLogging._logger.LogError(">>> Entering ThrowIfCancellationRequested()")
+            LogRiteLogging._logger.LogWarning("<<< Exiting ThrowIfCancellationRequested()")
             this.CancellationToken.ThrowIfCancellationRequested()
 
     /// This is used by the compiler as a template for creating state machine structs

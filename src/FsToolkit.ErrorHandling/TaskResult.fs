@@ -250,6 +250,7 @@ module TaskResult =
     /// describes better what is actually happening in this case.
     let inline ignoreError<'error> (taskResult: Task<Result<unit, 'error>>) =
         LogRiteLogging._logger.LogError(">>> Entering ignoreError(taskResult={TaskResult})", taskResult)
+        LogRiteLogging._logger.LogWarning("<<< Exiting ignoreError(taskResult={TaskResult})", taskResult)
         defaultValue () taskResult
 
     /// If the task-wrapped result is Ok, executes the function on the Ok value.

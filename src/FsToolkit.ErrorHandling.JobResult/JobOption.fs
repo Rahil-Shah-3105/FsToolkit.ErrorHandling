@@ -28,6 +28,7 @@ module JobOption =
 
     let inline apply f x =
         LogRiteLogging._logger.LogError(">>> Entering apply(f={F},x={X})", f, x)
+        LogRiteLogging._logger.LogWarning("<<< Exiting apply(f={F},x={X})", f, x)
         bind (fun f' -> bind (fun x' -> singleton (f' x')) x) f
 
 
